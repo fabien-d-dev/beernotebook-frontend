@@ -1,0 +1,72 @@
+# -------------------------------------------------------------------
+# Flutter/Dart/Pub related
+# -------------------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+lib/generated/
+/coverage/
+
+# -------------------------------------------------------------------
+# Android related
+# -------------------------------------------------------------------
+**/android/**/generated/
+**/android/gen/
+**/android/out/
+android/local.properties
+android/app/debug
+android/app/profile
+android/app/release
+*.keystore
+*.jks
+
+# -------------------------------------------------------------------
+# iOS related
+# -------------------------------------------------------------------
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Flash/Generated.xcconfig
+**/ios/Flash/flutter_export_environment.sh
+**/ios/.generated/
+/ios/Pods/
+.bundle/
+Podfile.lock
+
+# -------------------------------------------------------------------
+# API & Secret Management (Crucial pour ton API Node)
+# -------------------------------------------------------------------
+# Si tu crées un fichier .env dans ton dossier assets ou core pour tes clés d'API
+.env
+*.env
+lib/core/api/secrets.dart 
+
+# -------------------------------------------------------------------
+# IDE & System related
+# -------------------------------------------------------------------
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code
+.vscode/
+
+# Divers
+.DS_Store
+*.log
+*.swp
+.history
+note.txt
+
+# -------------------------------------------------------------------
+# Web & Desktop platforms
+# -------------------------------------------------------------------
+/linux/flutter/ephemeral/
+/macos/Flutter/ephemeral/
+/windows/flutter/ephemeral/

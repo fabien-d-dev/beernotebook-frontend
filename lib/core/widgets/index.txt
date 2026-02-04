@@ -1,0 +1,19 @@
+Examples include:
+
+    Custom buttons
+
+    Loading indicators
+
+    Error screens
+
+    App bars
+
+    Input fields
+
+By centralizing shared widgets here, you:
+
+    Avoid code duplication
+
+    Maintain a consistent UI/UX
+
+    Improve development speed
