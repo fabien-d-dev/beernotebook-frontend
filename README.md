@@ -37,6 +37,7 @@ lib/
 │   │   ├── [feature]_view.dart
 │   │   └── [feature]_view_model.dart
 └── main.dart           # App entry point and Provider injection
+```
 
 ## 🛡️ License & Legal Protection
 
