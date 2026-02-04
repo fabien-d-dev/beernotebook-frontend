@@ -10,10 +10,10 @@ class MainNavigationView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // On écoute le ViewModel pour l'index actuel
+    // We listen to the ViewModel for the current index
     final navVM = context.watch<NavigationViewModel>();
 
-    // Liste des vues correspondant aux onglets
+    // List of views corresponding to the tabs
     final List<Widget> pages = [
       const BeerView(), // Index 0
       const HomeView(), // Index 1
@@ -22,11 +22,11 @@ class MainNavigationView extends StatelessWidget {
 
     return Scaffold(
       body: IndexedStack(index: navVM.selectedIndex, children: pages),
-      // On utilise NavigationBar au lieu de BottomNavigationBar
+      // We use NavigationBar instead of BottomNavigationBar
       bottomNavigationBar: NavigationBar(
         selectedIndex: navVM.selectedIndex,
         onDestinationSelected: (int index) {
-          // On appelle notre ViewModel au lieu de faire un setState local
+          // We call our ViewModel instead of doing a local setState
           navVM.setIndex(index);
         },
         indicatorColor: const Color.fromARGB(255, 153, 255, 170),

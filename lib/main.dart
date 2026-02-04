@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// Imports
 import 'features/navigation/navigation_view_model.dart';
 import 'features/beer/beer_view_model.dart';
 import 'features/home/home_view_model.dart';

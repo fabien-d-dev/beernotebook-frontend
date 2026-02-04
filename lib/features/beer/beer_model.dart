@@ -2,7 +2,7 @@ class Beer {
   final String id;
   final String name;
   final String brewery;
-  final double abv; // Alcool par volume
+  final double abv;
   final double rating;
 
   Beer({

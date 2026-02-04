@@ -18,10 +18,10 @@ class ProfileView extends StatelessWidget {
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           
-          // Saut a la ligne pour le debug
+          // Line break for debugging
           const SizedBox(height: 20),
 
-          // Bouton Material 3 principal (Rempli)
+          // Main Material 3 button (Filled)
           FilledButton.icon(
             onPressed: () {
               debugPrint("Action: Go to -> Options");
@@ -30,9 +30,9 @@ class ProfileView extends StatelessWidget {
             label: const Text("Options"),
           ),
 
-          // Saut a la ligne pour le debug
+          // Line break for debugging
           const SizedBox(height: 12),
-          // Bouton Material 3 secondaire (Bordure uniquement)
+          // Secondary Material 3 button (Border only)
           OutlinedButton(
             onPressed: () {
               debugPrint("Action: Déconnexion");
