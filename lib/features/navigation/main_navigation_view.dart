@@ -29,7 +29,7 @@ class MainNavigationView extends StatelessWidget {
           // We call our ViewModel instead of doing a local setState
           navVM.setIndex(index);
         },
-        indicatorColor: const Color.fromARGB(255, 153, 255, 170),
+        indicatorColor: const Color.fromARGB(255, 153, 255, 253),
         destinations: const <Widget>[
           NavigationDestination(
             selectedIcon: Icon(Icons.sports_bar),
