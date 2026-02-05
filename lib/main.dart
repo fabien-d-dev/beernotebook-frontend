@@ -30,6 +30,7 @@ class BeerNotebookApp extends StatelessWidget {
       title: 'Beernotebook',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        fontFamily: 'Quicksand-Medium',
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 255, 255, 255),
         ),
