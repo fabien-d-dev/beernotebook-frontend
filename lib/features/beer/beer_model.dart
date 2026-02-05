@@ -2,14 +2,14 @@ class Beer {
   final String id;
   final String name;
   final String brewery;
-  final double abv;
+  final String type; 
   final double rating;
 
   Beer({
     required this.id,
     required this.name,
     required this.brewery,
-    required this.abv,
+    this.type = "Générique",
     required this.rating,
   });
 }
