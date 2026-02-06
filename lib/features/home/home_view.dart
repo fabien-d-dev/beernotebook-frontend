@@ -10,13 +10,14 @@ class HomeView extends StatelessWidget {
     final homeVM = context.watch<HomeViewModel>();
 
     return Scaffold(
+      backgroundColor: const Color.fromRGBO(243, 242, 247, 1),
       appBar: AppBar(
         centerTitle: true,
         title: Text(
           homeVM.title,
           style: const TextStyle(
             fontFamily: 'Bauhaus',
-            fontSize: 30,
+            fontSize: 28,
             fontWeight: FontWeight.w500,
           ),
         ),
