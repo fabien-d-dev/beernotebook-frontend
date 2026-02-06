@@ -9,7 +9,7 @@ class ProfileViewModel extends ChangeNotifier {
 
   // General Information
   String get username => "Admin";
-  String get email => "novenario@proton.me";
+  String get email => "novenario@pm.dm.am";
 
   // Subscription
   String get subscriptionType => "Premium";
