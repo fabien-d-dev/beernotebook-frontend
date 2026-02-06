@@ -24,6 +24,13 @@ class BeerViewModel extends ChangeNotifier {
       type: 'Double IPA',
       rating: 8.6,
     ),
+    Beer(
+      id: '4',
+      name: 'Little Atlantique Zarata',
+      brewery: 'L.A.B',
+      type: 'Tripe IPA',
+      rating: 5,
+    ),
   ];
 
   List<Beer> get beers => _beers;
