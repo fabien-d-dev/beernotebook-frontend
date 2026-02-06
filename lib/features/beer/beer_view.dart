@@ -14,6 +14,7 @@ class BeerView extends StatelessWidget {
         0xFFF3F2F7,
       ), // Very light grey background as in the image
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           "Collection",
           style: TextStyle(fontFamily: 'Bauhaus', fontSize: 28),
@@ -25,7 +26,7 @@ class BeerView extends StatelessWidget {
         children: [
           // Top button bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             child: Row(
               children: [
                 Expanded(
@@ -84,8 +85,8 @@ class BeerView extends StatelessWidget {
   // Widget for each beer line
   Widget _buildBeerCard(beer) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -119,13 +120,16 @@ class BeerView extends StatelessWidget {
                   beer.name,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 16,
                   ),
                 ),
                 Text(
-                  beer.type ??
-                      "Style inconnu",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  beer.type ?? "Style inconnu",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -137,11 +141,11 @@ class BeerView extends StatelessWidget {
                 beer.rating.toString(),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 16,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.star, color: Colors.amber, size: 24),
+              const Icon(Icons.star, color: Colors.amber, size: 19),
             ],
           ),
         ],
