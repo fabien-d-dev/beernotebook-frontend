@@ -1,53 +1,78 @@
 import 'package:flutter/material.dart';
+import '../../core/api/api_client.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  bool get isStandardAccount => true;
+  final ApiClient _apiClient;
+  final int userId;
+  final int collectionId;
+  final int wishlistId;
 
-  // Stats
-  int get collectionCount => 119;
-  int get wishlistCount => 37;
+  Map<String, dynamic>? _userData;
+  List<dynamic> _collectionBeers = [];
+  List<dynamic> _wishlistBeers = [];
+  bool _isLoading = false;
 
-  // General Information
-  String get username => "Admin";
-  String get email => "novenario@pm.dm.am";
+  bool get isLoading => _isLoading;
 
-  // Subscription
-  String get subscriptionType => "Premium";
+  String get username =>
+      _userData?['username'] ?? _userData?['user_name'] ?? "User";
+  String get email => _userData?['email'] ?? "...";
+
+  int get collectionCount => _collectionBeers.length;
+  int get wishlistCount => _wishlistBeers.length;
+
+  // Subscription helpers
+  bool get isStandardAccount => _userData?['subscription_type'] == 'standard';
+  String get subscriptionType =>
+      _userData?['subscription']?['subscription_type'] ?? "Standard";
+
+  // Mocked dates for now, should ideally come from _userData
+  // TODO: DATA
   String get startDate => "26/11/2024";
-
-  // Renewal
   String get renewalDate => "26/02/2026";
   bool get isAutoRenewal => true;
 
-  // Liste des badges
-  List<Map<String, dynamic>> get badges => [
-    {
-      "name": "Premier Pas",
-      "description": "Avoir scanné sa première bière.",
-      "progress": 1.0,
-      "date": "12/01/2026",
-      "icon": Icons.sports_bar,
-    },
-    {
-      "name": "Amateur de IPA",
-      "description": "Noter 5 bières de type IPA.",
-      "progress": 0.6,
-      "date": null,
-      "icon": Icons.local_drink,
-    },
-    {
-      "name": "Grand Voyageur",
-      "description": "Goûter des bières de 5 pays différents.",
-      "progress": 0.2,
-      "date": null,
-      "icon": Icons.public,
-    },
-    {
-      "name": "Expert",
-      "description": "Remplir 50 fiches de dégustation.",
-      "progress": 0.1,
-      "date": null,
-      "icon": Icons.workspace_premium,
-    },
-  ];
+  ProfileViewModel(
+    this._apiClient, {
+    required this.userId,
+    required this.collectionId,
+    required this.wishlistId,
+  }) {
+    // Automatically fetch data when ViewModel is created
+    refreshData();
+  }
+
+  Future<void> refreshData() async {
+    if (_isLoading) return;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Fetch Basic Profile Info
+      _userData = await _apiClient.getUserProfile(userId);
+      // debugPrint("DEBUG: User Data loaded: $_userData");
+
+      // Fetch Collection (Handling the 404 if empty)
+      try {
+        _collectionBeers = await _apiClient.getUserBeers(userId);
+      } catch (e) {
+        // If API returns 404, it means the collection is just empty
+        debugPrint("DEBUG: Collection is empty or unreachable");
+        _collectionBeers = [];
+      }
+
+      // Fetch Wishlist (Handling the 404 if empty)
+      try {
+        _wishlistBeers = await _apiClient.getWishlistBeers(wishlistId);
+      } catch (e) {
+        debugPrint("DEBUG: Wishlist is empty or unreachable");
+        _wishlistBeers = [];
+      }
+    } catch (e) {
+      debugPrint("DEBUG ERROR: Global fetch failed: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

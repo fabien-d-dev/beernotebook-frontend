@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter/gestures.dart';
-// import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
 
-  // Fonction pour ouvrir le lien Discord
-  // Future<void> _launchDiscord() async {
-  //   final Uri url = Uri.parse('https://discord.gg/kyyWB8hpBX');
-  //   if (!await launchUrl(url)) {
-  //     throw Exception('Could not launch $url');
-  //   }
-  // }
+  Future<void> _launchDiscord() async {
+    final Uri url = Uri.parse('https://discord.gg/kyyWB8hpBX');
+    if (!await launchUrl(url)) {
+      throw Exception('Could not launch $url');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +22,7 @@ class AboutView extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          "À propos",
+          "Retour Options",
           style: TextStyle(color: Colors.black, fontSize: 18),
         ),
         backgroundColor: Colors.white,
@@ -85,7 +84,7 @@ class AboutView extends StatelessWidget {
                       decoration: TextDecoration.underline,
                       fontWeight: FontWeight.bold,
                     ),
-                    // recognizer: TapGestureRecognizer()..onTap = _launchDiscord,
+                    recognizer: TapGestureRecognizer()..onTap = _launchDiscord,
                   ),
                 ],
               ),

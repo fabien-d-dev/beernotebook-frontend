@@ -9,7 +9,20 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profileVM = context.watch<ProfileViewModel>();
+    final profileVM = context.watch<ProfileViewModel?>();
+
+    if (profileVM == null) {
+      return const Scaffold(body: SizedBox.shrink());
+    }
+
+    if (profileVM.isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF0097A7)),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
@@ -17,11 +30,7 @@ class ProfileView extends StatelessWidget {
         centerTitle: true,
         title: const Text(
           "Profil",
-          style: TextStyle(
-            fontFamily: 'Bauhaus',
-            // fontWeight: FontWeight.bold,
-            fontSize: 28,
-          ),
+          style: TextStyle(fontFamily: 'Bauhaus', fontSize: 28),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -124,7 +133,7 @@ class ProfileView extends StatelessWidget {
                   const SizedBox(height: 15),
 
                   if (profileVM.isStandardAccount)
-                    // Bouton S'abonner (Vert) - Apparaît si le compte est standard
+                    // Subscribe Button (Green) - Appears if the account is standard
                     SizedBox(
                       width: double.infinity,
                       height: 55,

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import './about/about_view.dart';
+import '../../auth/auth_view_model.dart';
+import '../../navigation/navigation_view_model.dart';
 
 class OptionsView extends StatelessWidget {
   const OptionsView({super.key});
@@ -54,7 +57,7 @@ class OptionsView extends StatelessWidget {
             icon: Icons.logout,
             label: "Déconnexion",
             color: const Color(0xFFD35252),
-            onTap: () => debugPrint("Action: Déconnexion"),
+            onTap: () => _showLogoutDialog(context),
           ),
         ],
       ),
@@ -88,4 +91,36 @@ class OptionsView extends StatelessWidget {
       ],
     );
   }
+}
+
+void _showLogoutDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text("Déconnexion"),
+      content: const Text("Êtes-vous sûr de vouloir vous déconnecter ?"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text("Annuler"),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(dialogContext);
+
+            context.read<NavigationViewModel>().setIndex(0);
+
+            await context.read<AuthViewModel>().logout();
+
+            if (context.mounted) {
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/', (route) => false);
+            }
+          },
+          child: const Text("Déconnexion", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
 }
