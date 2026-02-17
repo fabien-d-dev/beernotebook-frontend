@@ -63,6 +63,9 @@ lib/core/api/secrets.dart
 *.swp
 .history
 note.txt
+env.json
+env_dev.json
+env_prod.json
 
 # -------------------------------------------------------------------
 # Web & Desktop platforms
