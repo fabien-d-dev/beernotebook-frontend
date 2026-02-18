@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../beer_model.dart';
-import '../../collection/collection_view_model.dart';
-import '../../collection/collection_model.dart';
+import '../collection/collection_view_model.dart';
+import '../collection/collection_model.dart';
 import '../../auth/auth_view_model.dart';
 
 import './widgets/rating_section.dart';
@@ -12,15 +12,18 @@ import './widgets/tasting_panel.dart';
 
 class BeerDetailView extends StatefulWidget {
   final Beer beer;
+  final CollectionItem? collectionItem;
 
-  const BeerDetailView({super.key, required this.beer});
+  const BeerDetailView({super.key, required this.beer, this.collectionItem});
 
   @override
   State<BeerDetailView> createState() => _BeerDetailViewState();
 }
 
 class _BeerDetailViewState extends State<BeerDetailView> {
-  double _currentRating = 0.0;
+  late double _currentRating;
+  late double _originalRating;
+  bool _isSavingRating = false;
   bool _isDegustationOpen = false;
   CollectionItem? _userItem;
 
@@ -28,16 +31,22 @@ class _BeerDetailViewState extends State<BeerDetailView> {
   void initState() {
     super.initState();
 
+    _currentRating = widget.collectionItem?.rating ?? 0.0;
+    _originalRating = _currentRating;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final collectionVM = context.read<CollectionViewModel>();
-      final item = collectionVM.userCollection.firstWhere(
-        (element) => element.beer.id == widget.beer.id,
+      if (!mounted) return;
+
+      final vm = context.read<CollectionViewModel>();
+      final freshItem = vm.userCollection.firstWhere(
+        (it) => it.beer.id == widget.beer.id,
         orElse: () => CollectionItem(beer: widget.beer),
       );
 
       setState(() {
-        _userItem = item;
-        _currentRating = item.userRating ?? 0.0;
+        _userItem = freshItem;
+        _currentRating = freshItem.rating ?? 0.0;
+        _originalRating = _currentRating;
       });
     });
   }
@@ -158,7 +167,49 @@ class _BeerDetailViewState extends State<BeerDetailView> {
             // WIDGET RATING SECTION
             RatingSection(
               rating: _currentRating,
+              initialRating: _originalRating,
+              isSaving: _isSavingRating,
               onRatingChanged: (val) => setState(() => _currentRating = val),
+              onSave: () async {
+                setState(() => _isSavingRating = true);
+                try {
+                  await collectionVM.updateTasting(
+                    widget.beer.id,
+                    _currentRating,
+                  );
+
+                  setState(() {
+                    _originalRating = _currentRating;
+                    _isSavingRating = false;
+                  });
+
+                  if (!mounted || !context.mounted) return;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 12),
+                          Text(
+                            "Note mise à jour !",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF689F38),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      margin: const EdgeInsets.all(20),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } catch (e) {
+                  setState(() => _isSavingRating = false);
+                }
+              },
             ),
 
             const SizedBox(height: 30),
@@ -170,7 +221,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                 onSave: (data) async {
                   try {
                     data['rating'] = _currentRating;
-                    await collectionVM.updateTasting(widget.beer.id, data);
+                    await collectionVM.updateTasting(widget.beer.id, _currentRating);
 
                     if (!mounted || !context.mounted) return;
 
@@ -181,7 +232,6 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                       ),
                     );
                     setState(() => _isDegustationOpen = false);
-                    
                   } catch (e) {
                     debugPrint("Erreur sauvegarde : $e");
                   }
