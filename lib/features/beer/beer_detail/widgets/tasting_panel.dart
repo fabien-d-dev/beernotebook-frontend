@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../beer_model.dart';
-import '../../../collection/collection_model.dart';
+import '../../collection/collection_model.dart';
 
 class TastingPanel extends StatefulWidget {
   final Beer beer;
