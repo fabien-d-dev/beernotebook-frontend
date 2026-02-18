@@ -40,10 +40,9 @@ Podfile.lock
 # -------------------------------------------------------------------
 # API & Secret Management (Crucial pour ton API Node)
 # -------------------------------------------------------------------
-# Si tu crées un fichier .env dans ton dossier assets ou core pour tes clés d'API
 .env
 *.env
-lib/core/api/secrets.dart 
+lib/core/api
 
 # -------------------------------------------------------------------
 # IDE & System related
