@@ -15,7 +15,7 @@ class SubscriptionView extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          "Retour Profil",
+          "Retour",
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
@@ -27,7 +27,7 @@ class SubscriptionView extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // --- Bloc Avantages Premium ---
+            // Premium Benefits Block
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -66,7 +66,7 @@ class SubscriptionView extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // --- Bloc Prix ---
+            // Price Block
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
@@ -101,7 +101,7 @@ class SubscriptionView extends StatelessWidget {
 
             const SizedBox(height: 25),
 
-            // --- Texte de réassurance ---
+            // Reassurance text
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
@@ -122,13 +122,13 @@ class SubscriptionView extends StatelessWidget {
 
             const SizedBox(height: 25),
 
-            // --- Bouton Paiement ---
+            // Payment Button
             SizedBox(
               width: double.infinity,
               height: 65,
               child: FilledButton(
                 onPressed: () {
-                  // Action de paiement
+                  // Payment action
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0097A7),
@@ -159,7 +159,7 @@ class SubscriptionView extends StatelessWidget {
     );
   }
 
-  // Helper pour construire les lignes d'avantages avec la puce verte
+  // Helper
   Widget _buildBenefitRow(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15.0),
