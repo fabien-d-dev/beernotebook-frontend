@@ -1,37 +1,46 @@
 import 'package:flutter/material.dart';
+import '../../core/api/api_client.dart';
 import 'beer_model.dart';
 
 class BeerViewModel extends ChangeNotifier {
-  final List<Beer> _beers = [
-    Beer(
-      id: '1',
-      name: 'Mélusine',
-      brewery: 'Brasserie Mélusine',
-      type: 'Bio',
-      rating: 10.0,
-    ),
-    Beer(
-      id: '2',
-      name: 'St Austell Brewery',
-      brewery: 'Proper Job',
-      type: 'Cornish IPA',
-      rating: 10.0,
-    ),
-    Beer(
-      id: '3',
-      name: 'Little Atlantique',
-      brewery: 'L.A.B',
-      type: 'Double IPA',
-      rating: 8.6,
-    ),
-    Beer(
-      id: '4',
-      name: 'Little Atlantique Zarata',
-      brewery: 'L.A.B',
-      type: 'Tripe IPA',
-      rating: 5,
-    ),
-  ];
+  final ApiClient _apiClient;
 
-  List<Beer> get beers => _beers;
+  BeerViewModel(this._apiClient);
+
+  List<Beer> _catalogBeers = [];
+  List<Beer> get catalogBeers => _catalogBeers;
+
+  int _catalogPage = 1;
+  bool hasMoreCatalog = true;
+  bool isLoading = false;
+
+  Future<void> loadCatalog({bool isRefresh = false}) async {
+    if (isLoading || (!isRefresh && !hasMoreCatalog)) return;
+    if (isRefresh) _catalogPage = 1;
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final List<dynamic> rawData = await _apiClient.getBeers(
+        page: _catalogPage,
+      );
+      final fetched = rawData.map((json) => Beer.fromJson(json)).toList();
+
+      if (isRefresh) {
+        _catalogBeers = fetched;
+      } else {
+        final existingIds = _catalogBeers.map((b) => b.id).toSet();
+        _catalogBeers.addAll(fetched.where((b) => !existingIds.contains(b.id)));
+      }
+
+      hasMoreCatalog = fetched.length >= 20;
+      if (hasMoreCatalog) _catalogPage++;
+    } catch (e) {
+      debugPrint("Error Catalog: $e");
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }
