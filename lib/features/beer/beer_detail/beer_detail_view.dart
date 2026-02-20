@@ -5,16 +5,28 @@ import 'package:intl/intl.dart';
 import '../beer_model.dart';
 import '../collection/collection_view_model.dart';
 import '../collection/collection_model.dart';
+import '../wishlist/wishlist_view_model.dart';
 import '../../auth/auth_view_model.dart';
 
 import './widgets/rating_section.dart';
 import './widgets/tasting_panel.dart';
+import '../../../core/widgets/action_button.dart';
 
 class BeerDetailView extends StatefulWidget {
   final Beer beer;
   final CollectionItem? collectionItem;
+  final bool isFromCollection;
+  final bool isFromWishlist;
+  final bool isFromCatalog;
 
-  const BeerDetailView({super.key, required this.beer, this.collectionItem});
+  const BeerDetailView({
+    super.key,
+    required this.beer,
+    this.collectionItem,
+    this.isFromCollection = false,
+    this.isFromWishlist = false,
+    this.isFromCatalog = false,
+  });
 
   @override
   State<BeerDetailView> createState() => _BeerDetailViewState();
@@ -25,6 +37,8 @@ class _BeerDetailViewState extends State<BeerDetailView> {
   late double _originalRating;
   bool _isSavingRating = false;
   bool _isDegustationOpen = false;
+  bool _isAddingToWishlist = false;
+  bool _isAddingToCollection = false;
   CollectionItem? _userItem;
 
   @override
@@ -37,8 +51,9 @@ class _BeerDetailViewState extends State<BeerDetailView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final vm = context.read<CollectionViewModel>();
-      final freshItem = vm.userCollection.firstWhere(
+      final collectionVM = context.read<CollectionViewModel>();
+
+      final freshItem = collectionVM.userCollection.firstWhere(
         (it) => it.beer.id == widget.beer.id,
         orElse: () => CollectionItem(beer: widget.beer),
       );
@@ -113,7 +128,13 @@ class _BeerDetailViewState extends State<BeerDetailView> {
   Widget build(BuildContext context) {
     final authVM = context.watch<AuthViewModel>();
     final isPremium = authVM.isPremium;
+
     final collectionVM = context.watch<CollectionViewModel>();
+    final bool inCollection = collectionVM.isBeerInCollection(widget.beer.id);
+
+    final wishlistVM = context.watch<WishlistViewModel?>();
+    final bool inWishlist =
+        wishlistVM?.isBeerInWishlist(widget.beer.id) ?? false;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
@@ -164,53 +185,114 @@ class _BeerDetailViewState extends State<BeerDetailView> {
 
             const SizedBox(height: 30),
 
-            // WIDGET RATING SECTION
-            RatingSection(
-              rating: _currentRating,
-              initialRating: _originalRating,
-              isSaving: _isSavingRating,
-              onRatingChanged: (val) => setState(() => _currentRating = val),
-              onSave: () async {
-                setState(() => _isSavingRating = true);
-                try {
-                  await collectionVM.updateTasting(
-                    widget.beer.id,
-                    _currentRating,
-                  );
+            if (widget.isFromCatalog) ...[
+              // =============
+              // CATALOG VIEW
+              // =============
+              ActionButton(
+                label: inCollection
+                    ? "Déjà dans ma collection"
+                    : "Ajouter à ma collection",
+                icon: inCollection
+                    ? Icons.check_circle
+                    : Icons.add_circle_outline,
+                loadingLabel: "Ajout en cours...",
+                color: inCollection ? Colors.grey : const Color(0xFF0097A7),
+                isLoading: _isAddingToCollection,
+                onPressed: inCollection ? null : _handleAddToCollection,
+              ),
 
-                  setState(() {
-                    _originalRating = _currentRating;
-                    _isSavingRating = false;
-                  });
+              const SizedBox(height: 15),
 
-                  if (!mounted || !context.mounted) return;
+              ActionButton(
+                label: inWishlist
+                    ? "Dans ma wishlist"
+                    : "Ajouter à ma wishlist",
+                icon: inWishlist ? Icons.favorite : Icons.favorite_border,
+                color: inWishlist
+                    ? Colors.grey
+                    : const Color.fromARGB(255, 5, 132, 83),
+                isLoading: _isAddingToWishlist,
+                onPressed: inWishlist ? null : _handleAddToWishlist,
+              ),
+            ] else if (widget.isFromCollection) ...[
+              // =============
+              // COLLECTION VIEW
+              // =============
+              RatingSection(
+                rating: _currentRating,
+                initialRating: _originalRating,
+                isSaving: _isSavingRating,
+                onRatingChanged: (val) => setState(() => _currentRating = val),
+                onSave: () async {
+                  setState(() => _isSavingRating = true);
+                  try {
+                    await collectionVM.updateTasting(
+                      widget.beer.id,
+                      _currentRating,
+                    );
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.white),
-                          SizedBox(width: 12),
-                          Text(
-                            "Note mise à jour !",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                    setState(() {
+                      _originalRating = _currentRating;
+                      _isSavingRating = false;
+                    });
+
+                    if (!mounted || !context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 12),
+                            Text(
+                              "Note mise à jour !",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF689F38),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        margin: const EdgeInsets.all(20),
+                        duration: const Duration(seconds: 2),
                       ),
-                      backgroundColor: const Color(0xFF689F38),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      margin: const EdgeInsets.all(20),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                } catch (e) {
-                  setState(() => _isSavingRating = false);
-                }
-              },
-            ),
+                    );
+                  } catch (e) {
+                    setState(() => _isSavingRating = false);
+                  }
+                },
+              ),
+              ActionButton(
+                label: inWishlist
+                    ? "Dans ma wishlist"
+                    : "Ajouter à ma wishlist",
+                icon: inWishlist ? Icons.favorite : Icons.favorite_border,
+                color: inWishlist
+                    ? Colors.grey
+                    : const Color.fromARGB(255, 5, 132, 83),
+                isLoading: _isAddingToWishlist,
+                onPressed: inWishlist ? null : _handleAddToWishlist,
+              ),
+            ] else if (widget.isFromWishlist) ...[
+              // =============
+              // WISHLIST VIEW
+              // =============
+              ActionButton(
+                label: inCollection
+                    ? "Déjà dans ma collection"
+                    : "Ajouter à ma collection",
+                icon: inCollection
+                    ? Icons.check_circle
+                    : Icons.add_circle_outline,
+                loadingLabel: "Ajout en cours...",
+                color: inCollection ? Colors.grey : const Color(0xFF0097A7),
+                isLoading: _isAddingToCollection,
+                onPressed: inCollection ? null : _handleAddToCollection,
+              ),
+            ],
 
             const SizedBox(height: 30),
 
@@ -221,7 +303,10 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                 onSave: (data) async {
                   try {
                     data['rating'] = _currentRating;
-                    await collectionVM.updateTasting(widget.beer.id, _currentRating);
+                    await collectionVM.updateTasting(
+                      widget.beer.id,
+                      _currentRating,
+                    );
 
                     if (!mounted || !context.mounted) return;
 
@@ -496,5 +581,65 @@ class _BeerDetailViewState extends State<BeerDetailView> {
         );
       },
     );
+  }
+
+  Future<void> _handleAddToCollection() async {
+    setState(() => _isAddingToCollection = true);
+
+    try {
+      await context.read<CollectionViewModel>().addToCollection(widget.beer.id);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Bière ajoutée avec succès !"),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur : ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToCollection = false);
+      }
+    }
+  }
+
+  Future<void> _handleAddToWishlist() async {
+    setState(() => _isAddingToWishlist = true);
+
+    try {
+      await context.read<WishlistViewModel>().addToWishlist(widget.beer.id);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Ajouté à votre liste de souhaits !"),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur wishlist : ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToWishlist = false);
+      }
+    }
   }
 }
