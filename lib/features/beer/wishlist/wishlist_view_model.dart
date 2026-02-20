@@ -30,4 +30,30 @@ class WishlistViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> addToWishlist(int beerId) async {
+    try {
+      await _apiClient.addBeerToWishlist(wishlistId, beerId);
+
+      await loadWishlist();
+    } catch (e) {
+      debugPrint("Erreur lors de l'ajout : $e");
+      rethrow;
+    }
+  }
+
+  bool isBeerInWishlist(int beerId) {
+    return _wishlistBeers.any((item) => item.beer.id == beerId);
+  }
+
+  Future<void> removeFromWishlist(int beerId) async {
+    try {
+      await _apiClient.removeBeerFromWishlist(wishlistId, beerId);
+
+      await loadWishlist();
+    } catch (e) {
+      debugPrint("Erreur lors de la suppression : $e");
+      rethrow;
+    }
+  }
 }
