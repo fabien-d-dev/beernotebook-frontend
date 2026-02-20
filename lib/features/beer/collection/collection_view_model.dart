@@ -63,4 +63,30 @@ class CollectionViewModel extends ChangeNotifier {
       rethrow;
     }
   }
+
+  Future<void> addToCollection(int beerId) async {
+    try {
+      await _apiClient.addBeerToCollection(collectionId, beerId);
+
+      await loadUserCollection();
+    } catch (e) {
+      debugPrint("Erreur lors de l'ajout : $e");
+      rethrow;
+    }
+  }
+
+  bool isBeerInCollection(int beerId) {
+    return _userCollection.any((item) => item.beer.id == beerId);
+  }
+
+  Future<void> removeFromCollection(int beerId) async {
+    try {
+      await _apiClient.removeBeerFromCollection(collectionId, beerId);
+
+      await loadUserCollection();
+    } catch (e) {
+      debugPrint("Erreur lors de la suppression : $e");
+      rethrow;
+    }
+  }
 }
