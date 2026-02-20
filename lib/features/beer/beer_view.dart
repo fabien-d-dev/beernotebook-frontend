@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'beer_detail/beer_detail_view.dart';
 import './wishlist/wishlist_view.dart';
 import 'collection/collection_view_model.dart';
@@ -150,58 +151,96 @@ class _BeerViewState extends State<BeerView> {
   }
 
   Widget _buildBeerCard(BuildContext context, CollectionItem item) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) =>
-                BeerDetailView(beer: item.beer, collectionItem: item),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8, left: 4, right: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEEEEEE)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.20),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+            spreadRadius: -2,
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
+        ],
+      ),
+
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFEEEEEE)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color.fromARGB(25, 0, 0, 0).withValues(),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            _buildBeerImage(item.beer.imageUrl),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.beer.brand,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    item.beer.genericName ?? "Inconnu",
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                ],
+
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            _showOptions(context, item);
+          },
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => BeerDetailView(
+                  beer: item.beer,
+                  collectionItem: item,
+                  isFromCollection: true,
+                ),
               ),
+            );
+          },
+
+          splashColor: const Color.fromARGB(
+            255,
+            142,
+            142,
+            142,
+          ).withValues(alpha: 0.1),
+          highlightColor: const Color.fromARGB(
+            255,
+            133,
+            133,
+            133,
+          ).withValues(alpha: 0.05),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                _buildBeerImage(item.beer.imageUrl),
+
+                const SizedBox(width: 16),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.beer.brand,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF2D2D2D),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      Text(
+                        item.beer.genericName ?? "Inconnu",
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+
+                _buildRatingDisplay(
+                  (item.rating == null || item.rating == 0)
+                      ? "--"
+                      : item.rating!.toStringAsFixed(1),
+                ),
+              ],
             ),
-            _buildRatingDisplay(
-              (item.rating == null || item.rating == 0)
-                  ? "--"
-                  : item.rating!.toStringAsFixed(1),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -242,6 +281,113 @@ class _BeerViewState extends State<BeerView> {
         const SizedBox(width: 4),
         const Icon(Icons.star, color: Colors.amber, size: 20),
       ],
+    );
+  }
+
+  void _showOptions(BuildContext context, CollectionItem item) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 8,
+                  ),
+                  child: Text(
+                    item.beer.brand,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+
+                const Divider(),
+
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: Color.fromARGB(255, 205, 33, 21),
+                  ),
+                  title: const Text(
+                    "Supprimer de ma collection",
+                    style: TextStyle(color: Color.fromARGB(255, 203, 27, 14)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeletion(context, item);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cancel_outlined),
+                  title: const Text("Annuler"),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeletion(BuildContext context, CollectionItem item) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Supprimer ?"),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        content: Text(
+          "Voulez-vous vraiment retirer ${item.beer.brand} de votre collection ?",
+          textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Annuler"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+
+              try {
+                await context.read<CollectionViewModel>().removeFromCollection(
+                  item.beer.id,
+                );
+
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Bière retirée de la collection"),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Erreur : $e"),
+                    backgroundColor: const Color.fromARGB(255, 195, 16, 3),
+                  ),
+                );
+              }
+            },
+            child: const Text("Supprimer", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }
