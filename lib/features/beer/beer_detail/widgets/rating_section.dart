@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class RatingSection extends StatelessWidget {
   final double rating;
-  final double initialRating; 
+  final double initialRating;
   final ValueChanged<double> onRatingChanged;
-  final VoidCallback onSave; 
+  final VoidCallback onSave;
   final bool isSaving;
 
   const RatingSection({
@@ -18,7 +18,6 @@ class RatingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final hasChanged = (rating - initialRating).abs() > 0.01;
 
     return Column(
@@ -70,7 +69,7 @@ class RatingSection extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           opacity: hasChanged ? 1.0 : 0.0,
           child: Padding(
-            padding: const EdgeInsets.only(top: 20),
+            padding: const EdgeInsets.only(top: 20, bottom: 20),
             child: hasChanged
                 ? ElevatedButton.icon(
                     onPressed: isSaving ? null : onSave,
