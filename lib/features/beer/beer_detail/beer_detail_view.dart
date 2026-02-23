@@ -6,10 +6,12 @@ import '../beer_model.dart';
 import '../collection/collection_view_model.dart';
 import '../collection/collection_model.dart';
 import '../wishlist/wishlist_view_model.dart';
+import '../beer_view_model.dart';
 import '../../auth/auth_view_model.dart';
 
 import './widgets/rating_section.dart';
 import './widgets/tasting_panel.dart';
+import './widgets/share_modal.dart';
 import '../../../core/widgets/action_button.dart';
 
 class BeerDetailView extends StatefulWidget {
@@ -355,13 +357,17 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                     },
                   ),
 
-                  // Share Action
                   _buildIconButton(
                     label: "Partager",
                     icon: Icons.qr_code_scanner,
                     color: const Color(0xFF0097A7),
                     onTap: () {
-                      // Share logic
+                      final vm = context.read<BeerViewModel>();
+                      final String pId = widget.beer.productId ?? "";
+
+                      vm.fetchBarcode(pId);
+
+                      showShareModal(context, vm, pId);
                     },
                   ),
                 ],
