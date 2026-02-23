@@ -33,7 +33,7 @@ class Beer {
     return Beer(
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
       brand: json['brand'] ?? 'Marque inconnue',
-      productId: json['product_id'],
+      productId: json['product_id']?.toString(),
       genericName: json['generic_name'] ?? json['product_name'],
       type: json['type'],
       abv: json['abv'],
