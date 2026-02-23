@@ -55,4 +55,4 @@ This software and its source code are the sole property of the author. Access to
 
 | Home Screen | Detail Screen | Collection Screen | Share Modal |
 |:---:|:---:|:---:|:---:|
-| <img src="assets/images/home_screen.jpg" width="200"> | <img src="assets/images/detail_screen.jpg" width="200"> | <img src="assets/images/collection_screen.jpg" width="200"> | <img src="assets/images/share_screen.jpg" width="200"> |
+| <img src="assets/images/home_screen.jpg" width="180"> | <img src="assets/images/detail_screen.jpg" width="180"> | <img src="assets/images/collection_screen.jpg" width="180"> | <img src="assets/images/share_screen.jpg" width="180"> |
