@@ -50,3 +50,9 @@ This software and its source code are the sole property of the author. Access to
 * **Prohibition of Copying:** Unauthorized copying of this project, or any portion thereof, via any medium is strictly prohibited.
 * **Prohibition of Distribution:** Any distribution of this code, whether in its original or modified form, is strictly prohibited without the express prior written consent of the copyright owner.
 * **Legal Action:** Any infringement of these terms, including unauthorized cloning, reverse-engineering, or redistribution, will be prosecuted to the maximum extent permitted by intellectual property law.
+
+## 📸 Screenshots
+
+| Home Screen | Detail Screen | Collection Screen | Share Modal |
+|:---:|:---:|:---:|:---:|
+| <img src="assets/home_screen.jpg" width="250"> | <img src="assets/detail_screen.jpg" width="250"> | <img src="assets/collection_screen.jpg" width="250"> | <img src="assets/share_screen.jpg" width="250"> |
