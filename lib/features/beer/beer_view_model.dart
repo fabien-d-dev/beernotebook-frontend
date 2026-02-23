@@ -14,6 +14,12 @@ class BeerViewModel extends ChangeNotifier {
   bool hasMoreCatalog = true;
   bool isLoading = false;
 
+  String? _barcodeBase64;
+  String? get barcodeBase64 => _barcodeBase64;
+
+  bool _isGeneratingBarcode = false;
+  bool get isGeneratingBarcode => _isGeneratingBarcode;
+
   Future<void> loadCatalog({bool isRefresh = false}) async {
     if (isLoading || (!isRefresh && !hasMoreCatalog)) return;
     if (isRefresh) _catalogPage = 1;
@@ -40,6 +46,23 @@ class BeerViewModel extends ChangeNotifier {
       debugPrint("Error Catalog: $e");
     } finally {
       isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchBarcode(String productId) async {
+    _isGeneratingBarcode = true;
+    _barcodeBase64 = null;
+    notifyListeners();
+
+    try {
+      final String result = await _apiClient.getBarcodeImage(productId);
+
+      _barcodeBase64 = result;
+    } catch (e) {
+      debugPrint("Error generating barcode: $e");
+    } finally {
+      _isGeneratingBarcode = false;
       notifyListeners();
     }
   }
