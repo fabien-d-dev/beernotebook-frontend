@@ -28,14 +28,30 @@ void showShareModal(BuildContext context, BeerViewModel vm, String productId) {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        "Pour partager, demande à un(e) ami(e)\nde scanner via son BeerNotebook.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                      Text.rich(
+                        TextSpan(
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          children: [
+                            const TextSpan(
+                              text:
+                                  "Pour partager, demande à un(e) ami(e)\nde scanner via son ",
+                            ),
+                            TextSpan(
+                              text: "BeerNotebook",
+                              style: const TextStyle(
+                                color: Color(0xFF0097A7),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: "."),
+                          ],
                         ),
+                        textAlign: TextAlign.center,
                       ),
+
                       const SizedBox(height: 25),
 
                       SizedBox(
@@ -60,7 +76,12 @@ void showShareModal(BuildContext context, BeerViewModel vm, String productId) {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color.fromARGB(106, 0, 0, 0).withValues(),
+                            color: const Color.fromARGB(
+                              106,
+                              0,
+                              0,
+                              0,
+                            ).withValues(),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
