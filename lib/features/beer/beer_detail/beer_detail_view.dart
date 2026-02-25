@@ -20,6 +20,7 @@ class BeerDetailView extends StatefulWidget {
   final bool isFromCollection;
   final bool isFromWishlist;
   final bool isFromCatalog;
+  final bool isFromScan;
 
   const BeerDetailView({
     super.key,
@@ -28,6 +29,7 @@ class BeerDetailView extends StatefulWidget {
     this.isFromCollection = false,
     this.isFromWishlist = false,
     this.isFromCatalog = false,
+    this.isFromScan = false,
   });
 
   @override
@@ -50,7 +52,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
     _currentRating = widget.collectionItem?.rating ?? 0.0;
     _originalRating = _currentRating;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
       final collectionVM = context.read<CollectionViewModel>();
@@ -59,11 +61,24 @@ class _BeerDetailViewState extends State<BeerDetailView> {
         (it) => it.beer.id == widget.beer.id,
         orElse: () => CollectionItem(beer: widget.beer),
       );
+      final tastingData = await collectionVM.fetchBeerTasting(widget.beer.id);
+
+      bool hasTastingData =
+          tastingData != null &&
+          (tastingData['beerColor'] != null ||
+              tastingData['clarity'] != null ||
+              tastingData['bitterness'] != null ||
+              (tastingData['observations'] != null &&
+                  tastingData['observations'].toString().isNotEmpty));
 
       setState(() {
         _userItem = freshItem;
         _currentRating = freshItem.rating ?? 0.0;
         _originalRating = _currentRating;
+
+        if (widget.isFromCollection && hasTastingData) {
+          _isDegustationOpen = true;
+        }
       });
     });
   }
@@ -141,7 +156,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
       appBar: AppBar(
-        title: const Text("Retour Collection"),
+        title: const Text("Retour"),
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
@@ -229,7 +244,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                 onSave: () async {
                   setState(() => _isSavingRating = true);
                   try {
-                    await collectionVM.updateTasting(
+                    await collectionVM.updateRating(
                       widget.beer.id,
                       _currentRating,
                     );
@@ -294,36 +309,124 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                 isLoading: _isAddingToCollection,
                 onPressed: inCollection ? null : _handleAddToCollection,
               ),
+            ] else if (widget.isFromScan) ...[
+              // =============
+              // FROM SCAN
+              // =============
+              if (inCollection) ...[
+                const Text(
+                  "Déjà dans la collection",
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                if (_currentRating > 0)
+                  Text.rich(
+                    TextSpan(
+                      text: "Ma note : ",
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: "${(_currentRating).toStringAsFixed(1)} / 10",
+                          style: const TextStyle(color: Color(0xFF0097A7)),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  const Text(
+                    "Pas encore notée",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 222, 149, 54),
+                    ),
+                  ),
+              ],
+              const SizedBox(height: 15),
+
+              ActionButton(
+                label: inCollection
+                    ? "Voir la bière"
+                    : "Ajouter à ma collection",
+                icon: inCollection
+                    ? Icons.visibility
+                    : Icons.add_circle_outline,
+                loadingLabel: "Chargement...",
+                color: const Color(0xFF0097A7),
+                isLoading: _isAddingToCollection,
+                onPressed: () {
+                  if (inCollection) {
+                    setState(() {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BeerDetailView(
+                            beer: widget.beer,
+                            isFromCollection: true,
+                            isFromScan: false,
+                            collectionItem: _userItem,
+                          ),
+                        ),
+                      );
+                    });
+                  } else {
+                    _handleAddToCollection();
+                  }
+                },
+              ),
+
+              const SizedBox(height: 15),
+
+              ActionButton(
+                label: inWishlist
+                    ? "Dans ma wishlist"
+                    : "Ajouter à ma wishlist",
+                icon: inWishlist ? Icons.favorite : Icons.favorite_border,
+                color: inWishlist
+                    ? Colors.grey
+                    : const Color.fromARGB(255, 5, 132, 83),
+                isLoading: _isAddingToWishlist,
+                onPressed: inWishlist ? null : _handleAddToWishlist,
+              ),
             ],
 
             const SizedBox(height: 30),
 
             // WIDGET TASTING PANEL
             if (_isDegustationOpen)
-              TastingPanel(
-                beer: widget.beer,
-                onSave: (data) async {
-                  try {
-                    data['rating'] = _currentRating;
-                    await collectionVM.updateTasting(
-                      widget.beer.id,
-                      _currentRating,
-                    );
-
-                    if (!mounted || !context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Dégustation enregistrée !"),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                    setState(() => _isDegustationOpen = false);
-                  } catch (e) {
-                    debugPrint("Erreur sauvegarde : $e");
+              FutureBuilder<Map<String, dynamic>?>(
+                future: context.read<CollectionViewModel>().fetchBeerTasting(
+                  widget.beer.id,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
                   }
+
+                  return TastingPanel(
+                    beer: widget.beer,
+                    initialItem: snapshot.hasData
+                        ? _mapToCollectionItem(widget.beer, snapshot.data!)
+                        : widget.collectionItem,
+                    onSave: (data) async {
+                      await context.read<CollectionViewModel>().updateTasting(
+                        widget.beer.id,
+                        data,
+                      );
+                      setState(() => _isDegustationOpen = true);
+                    },
+                    onClose: () => setState(() => _isDegustationOpen = false),
+                  );
                 },
-                onClose: () => setState(() => _isDegustationOpen = false),
               ),
 
             // ACTION BUTTON
@@ -332,15 +435,16 @@ class _BeerDetailViewState extends State<BeerDetailView> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  // Tasting Action
-                  _buildIconButton(
-                    label: _isDegustationOpen ? "Fermer" : "Déguster",
-                    icon: Icons.local_drink,
-                    color: const Color(0xFF0097A7),
-                    onTap: () => setState(
-                      () => _isDegustationOpen = !_isDegustationOpen,
+                  if (!widget.isFromScan)
+                    // Tasting Action
+                    _buildIconButton(
+                      label: _isDegustationOpen ? "Fermer" : "Déguster",
+                      icon: Icons.local_drink,
+                      color: const Color(0xFF0097A7),
+                      onTap: () => setState(
+                        () => _isDegustationOpen = !_isDegustationOpen,
+                      ),
                     ),
-                  ),
 
                   // Premium Action
                   _buildIconButton(
@@ -647,5 +751,20 @@ class _BeerDetailViewState extends State<BeerDetailView> {
         setState(() => _isAddingToWishlist = false);
       }
     }
+  }
+
+  CollectionItem _mapToCollectionItem(Beer beer, Map<String, dynamic> data) {
+    return CollectionItem(
+      beer: beer,
+      beerColor: data['beerColor'],
+      clarity: data['clarity'],
+      bitterness: data['bitterness'],
+      observations: data['observations'],
+      rating: data['rating']?.toDouble(),
+      headColor: data['headColor'],
+      headRetention: data['headRetention'],
+      carbonation: data['carbonation'],
+      createdAt: data['createdAt'],
+    );
   }
 }
