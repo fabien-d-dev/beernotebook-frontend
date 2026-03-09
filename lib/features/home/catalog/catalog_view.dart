@@ -191,7 +191,8 @@ class _CatalogViewState extends State<CatalogView> {
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => BeerDetailView(beer: beerModel),
+                builder: (context) =>
+                    BeerDetailView(beer: beerModel, isFromCatalog: true),
               ),
             );
           },
