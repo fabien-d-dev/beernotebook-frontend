@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'profile_view_model.dart';
 import './options/option_view.dart';
 import './subscription/subscription_view.dart';
+import '../auth/auth_view_model.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -10,6 +11,9 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profileVM = context.watch<ProfileViewModel?>();
+
+    final authVM = context.watch<AuthViewModel>();
+    final isPremium = authVM.isPremium;
 
     if (profileVM == null) {
       return const Scaffold(body: SizedBox.shrink());
@@ -104,86 +108,105 @@ class ProfileView extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // Options button (Cyan)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: FilledButton(
-                      onPressed: () {
-                        // Navigation to the options page
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const OptionsView(),
-                          ),
-                        );
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF0097A7),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 20,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildIconButton(
+                          label: "Options",
+                          icon: Icons.settings,
+                          color: const Color(0xFF0097A7),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const OptionsView(),
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                      child: const Text(
-                        "Options",
-                        style: TextStyle(fontSize: 18),
-                      ),
+                        const SizedBox(height: 15),
+
+                        if (!isPremium)
+                          // Subscribe Button (Standard user)
+                          _buildIconButton(
+                            label: "S'abonner",
+                            icon: Icons.stars_outlined,
+                            color: const Color(0xFF4CAF50),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const SubscriptionView(),
+                                ),
+                              );
+                            },
+                          )
+                        else
+                          // Cancel Button (Premium user)
+                          _buildIconButton(
+                            label: "Abonnement",
+                            icon: Icons.stars,
+                            color: const Color(0xFFD35252),
+                            onTap: () {
+                              // Logic for cancellation or subscription management
+                              debugPrint("Manage subscription or cancel");
+                            },
+                          ),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 15),
-
-                  if (profileVM.isStandardAccount)
-                    // Subscribe Button (Green) - Appears if the account is standard
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: FilledButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const SubscriptionView(),
-                            ),
-                          );
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          "S'abonner",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
-                    )
-                  else
-                    // Cancel button (Red) (if premium)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: FilledButton(
-                        onPressed: () {
-                          debugPrint("Demande d'annulation");
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFD35252),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          "Annuler abonnement",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildIconButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    // bool isPremiumLocked = false,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 75,
+            width: 75,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 32, color: color),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 
