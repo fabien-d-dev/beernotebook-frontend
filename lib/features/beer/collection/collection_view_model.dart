@@ -118,7 +118,7 @@ class CollectionViewModel extends ChangeNotifier {
         _userCollection[index] = CollectionItem(
           beer: oldItem.beer,
           rating: oldItem.rating,
-          createdAt: data['createdAt'],
+          createdAt: oldItem.createdAt,
           beerColor: data['beerColor'] ?? oldItem.beerColor,
           clarity: data['clarity'] ?? oldItem.clarity,
           bitterness: data['bitterness'] ?? oldItem.bitterness,
