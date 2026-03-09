@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../beer_model.dart';
 import '../../collection/collection_model.dart';
 
@@ -50,7 +49,6 @@ class _TastingPanelState extends State<TastingPanel> {
     _obsController.text = item?.observations ?? "";
 
     if (item != null) {
-      
       int getIndex(List<String> list, String? value) =>
           value != null ? list.indexOf(value) : 0;
 
@@ -87,16 +85,6 @@ class _TastingPanelState extends State<TastingPanel> {
       'observations': _obsController.text.trim(),
     });
     setState(() => _isEditing = false);
-  }
-
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return "Non datée";
-    try {
-      final DateTime dateTime = DateTime.parse(dateStr);
-      return DateFormat('dd/MM/yyyy à HH:mm').format(dateTime);
-    } catch (e) {
-      return "Date invalide";
-    }
   }
 
   @override
@@ -142,18 +130,6 @@ class _TastingPanelState extends State<TastingPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (item?.createdAt != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10, left: 10),
-            child: Text(
-              "Dégustée le : ${_formatDate(item!.createdAt)}",
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ),
         _buildReadOnlyRow("Robe", item?.beerColor ?? "Non renseigné"),
         _buildReadOnlyRow("Transparence", item?.clarity ?? "Non renseigné"),
         _buildReadOnlyRow(
@@ -164,7 +140,10 @@ class _TastingPanelState extends State<TastingPanel> {
           "Mousse (Persistance)",
           item?.headRetention ?? "Non renseigné",
         ),
-        _buildReadOnlyRow("Effervescence", item?.carbonation ?? "Non renseigné"),
+        _buildReadOnlyRow(
+          "Effervescence",
+          item?.carbonation ?? "Non renseigné",
+        ),
         _buildReadOnlyRow("Amertume", item?.bitterness ?? "Non renseigné"),
         const Divider(),
         const Text(
