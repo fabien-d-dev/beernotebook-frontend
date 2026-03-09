@@ -31,19 +31,20 @@ class Beer {
 
   factory Beer.fromJson(Map<String, dynamic> json) {
     return Beer(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? '') ?? 0,
       brand: json['brand'] ?? 'Marque inconnue',
       productId: json['product_id']?.toString(),
       genericName: json['generic_name'] ?? json['product_name'],
       type: json['type'],
-      abv: json['abv'],
-      quantity: json['quantity'],
-      imageUrl: json['image_url'],
-      manufacturingPlace: json['manufacturing_place'],
-      allergens: json['allergens'],
-      ingredients: json['ingredients'],
-      hops: json['hops'],
-      globalRating: null,
+      abv: json['abv']?.toString(),
+      quantity: json['quantity']?.toString(),
+      imageUrl: json['image_url']?.toString(),
+      manufacturingPlace: json['manufacturing_place']?.toString(),
+      allergens: json['allergens']?.toString(),
+      ingredients: json['ingredients']?.toString(),
+      hops: json['hops']?.toString(),
     );
   }
 
