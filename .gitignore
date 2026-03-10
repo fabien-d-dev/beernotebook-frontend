@@ -43,6 +43,9 @@ Podfile.lock
 .env
 *.env
 lib/core/api
+lib/core/config
+.metadata
+lib/features/auth/auth_view_model.dart
 
 # -------------------------------------------------------------------
 # IDE & System related
@@ -62,6 +65,7 @@ lib/core/api
 *.swp
 .history
 note.txt
+RAF.txt
 env.json
 env_dev.json
 env_prod.json
@@ -72,3 +76,8 @@ env_prod.json
 /linux/flutter/ephemeral/
 /macos/Flutter/ephemeral/
 /windows/flutter/ephemeral/
+
+# -------------------------------------------------------------------
+# AI
+# -------------------------------------------------------------------
+.github
