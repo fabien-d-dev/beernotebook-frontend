@@ -59,12 +59,13 @@ class UpdateBeerView extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            _buildInputField(
-              "Numéro de produit",
-              "Ex: 0123456789123",
-              viewModel.barcodeController,
-              isRequired: true,
-            ),
+            if (!viewModel.isBarcodePreFilled)
+              _buildInputField(
+                "Numéro de produit",
+                "Ex: 0123456789123",
+                viewModel.barcodeController,
+                isRequired: true,
+              ),
             _buildInputField(
               "Brasserie",
               "Ex: Mélusine",
@@ -96,7 +97,7 @@ class UpdateBeerView extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            if (viewModel.imageFile == null)
+            if (viewModel.imageFile == null && viewModel.existingImageUrl == null)
               _buildCustomButton(
                 "Prendre une photo",
                 const Color(0xFF0097A7),
@@ -124,20 +125,46 @@ class UpdateBeerView extends StatelessWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(9),
-                          child: Image.file(
-                            viewModel.imageFile!,
-                            fit: BoxFit.cover,
-                          ),
+                          child: viewModel.imageFile != null
+                              ? Image.file(
+                                  viewModel.imageFile!,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.network(
+                                  viewModel.existingImageUrl!,
+                                  fit: BoxFit.cover,
+                                ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _buildCustomButton(
-                    "Recommencer",
-                    const Color.fromARGB(255, 240, 146, 53),
-                    Icons.refresh,
-                    () => viewModel.resetPhoto(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Photo button
+                      Expanded(
+                        child: _buildCustomButton(
+                          "Changer",
+                          const Color(0xFF0097A7),
+                          Icons.camera_alt,
+                          () => viewModel.takePhoto(),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Clear button
+                      Expanded(
+                        child: _buildCustomButton(
+                          "Effacer",
+                          const Color.fromARGB(255, 240, 146, 53),
+                          Icons.delete,
+                          () {
+                            viewModel.resetPhoto();
+                            viewModel.clearExistingImage();
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -195,54 +222,180 @@ class UpdateBeerView extends StatelessWidget {
                           null,
                           // Update submission
                           () async {
-                            bool success = await viewModel.submitBeer();
+                            final isUpdate = viewModel.existingBeerId != null;
+                            bool success;
+
+                            if (isUpdate) {
+                              success = await viewModel.updateBeer();
+                            } else {
+                              success = await viewModel.submitBeer();
+                            }
 
                             if (success &&
                                 context.mounted &&
                                 viewModel.createdBeer != null) {
-                              final updatedBeer = viewModel.createdBeer!;
+                              final beerResult = viewModel.createdBeer!;
 
-                              // Success dialog
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (BuildContext dialogContext) {
-                                  return AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    title: const Text(
-                                      "Bière modifiée ! 🍺",
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    content: const Text(
-                                      "Les informations ont été mises à jour avec succès.",
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    actionsAlignment: MainAxisAlignment.center,
-                                    actions: [
-                                      _buildDialogButton(
-                                        context,
-                                        label: "Voir la fiche",
-                                        color: const Color(0xFF0097A7),
-                                        icon: Icons.visibility,
-                                        onTap: () {
-                                          Navigator.pop(dialogContext);
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  BeerDetailView(
-                                                    beer: updatedBeer,
-                                                  ),
-                                            ),
-                                          );
-                                        },
+                              if (isUpdate) {
+                                // Success dialog for update
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext dialogContext) {
+                                    return AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
                                       ),
-                                    ],
-                                  );
-                                },
-                              );
+                                      title: const Text(
+                                        "Bière modifiée ! 🍺",
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      content: const Text(
+                                        "Les informations ont été mises à jour avec succès.",
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      actionsAlignment: MainAxisAlignment.center,
+                                      actions: [
+                                        _buildDialogButton(
+                                          context,
+                                          label: "Voir la fiche",
+                                          color: const Color(0xFF0097A7),
+                                          icon: Icons.visibility,
+                                          onTap: () {
+                                            Navigator.pop(dialogContext);
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    BeerDetailView(
+                                                      beer: beerResult,
+                                                      isFromCollection: true,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              } else {
+                                // Success dialog for creation
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext dialogContext) {
+                                    return AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      title: const Text(
+                                        "Bière ajoutée ! 🍻",
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      content: const Text(
+                                        "Souhaitez-vous l'ajouter à vos listes ?",
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      actionsAlignment: MainAxisAlignment.center,
+                                      actions: [
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            _buildDialogButton(
+                                              context,
+                                              label: "Ajouter à ma collection",
+                                              color: const Color(0xFF0097A7),
+                                              icon: Icons.inventory_2,
+                                              onTap: () async {
+                                                try {
+                                                  // API call to link the beer to the user
+                                                  await context
+                                                      .read<CollectionViewModel>()
+                                                      .addToCollection(
+                                                        beerResult.id,
+                                                      );
+
+                                                  if (context.mounted) {
+                                                    Navigator.pop(dialogContext);
+
+                                                    Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            BeerDetailView(
+                                                              beer: beerResult,
+                                                              collectionItem: null,
+                                                              isFromCollection: true,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  }
+                                                } catch (e) {
+                                                  debugPrint(
+                                                    "❌ Erreur collection: $e",
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(height: 10),
+                                            _buildDialogButton(
+                                              context,
+                                              label: "Ajouter à ma wishlist",
+                                              color: const Color.fromARGB(
+                                                255,
+                                                5,
+                                                132,
+                                                83,
+                                              ),
+                                              icon: Icons.favorite,
+                                              onTap: () async {
+                                                try {
+                                                  await context
+                                                      .read<WishlistViewModel>()
+                                                      .addToWishlist(beerResult.id);
+
+                                                  if (context.mounted) {
+                                                    Navigator.pop(dialogContext);
+
+                                                    Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            BeerDetailView(
+                                                              beer: beerResult,
+                                                              isFromWishlist: true,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  }
+                                                } catch (e) {
+                                                  debugPrint(
+                                                    "❌ Erreur wishlist: $e",
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(height: 5),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(dialogContext);
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text(
+                                                "Plus tard (Retour Accueil)",
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
                             } else if (!success && context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -277,7 +430,6 @@ class UpdateBeerView extends StatelessWidget {
   }
 
   // WIDGET HELPERS
-
   Widget _buildInputField(
     String label,
     String hint,
