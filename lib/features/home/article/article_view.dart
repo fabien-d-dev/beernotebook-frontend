@@ -101,10 +101,19 @@ class _ArticleViewState extends State<ArticleView> {
                 SizedBox(
                   width: double.infinity,
                   height: 250,
-                  child: image != null
-                      ? Image.network(image, fit: BoxFit.cover)
+                  child: (image != null && image.isNotEmpty)
+                      ? Image.network(
+                          image,
+                          fit: BoxFit.cover,
+
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.asset(
+                                'assets/images/placeholder.jpg',
+                                fit: BoxFit.cover,
+                              ),
+                        )
                       : Image.asset(
-                          'assets/images/0004.jpg',
+                          'assets/images/placeholder.jpg',
                           fit: BoxFit.cover,
                         ),
                 ),
