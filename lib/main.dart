@@ -1,6 +1,10 @@
 // lib/main.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 // Configs et API
 import 'core/api/api_client.dart';
@@ -16,6 +20,7 @@ import 'features/beer/wishlist/wishlist_view_model.dart';
 import 'features/beer/collection/collection_view_model.dart';
 import 'features/scan/scan_view.dart';
 import 'features/home/add_beer/add_beer_view_model.dart';
+import 'features/profile/subscription/subscription_view_model.dart';
 
 // Auth
 import 'features/auth/auth_view_model.dart';
@@ -26,6 +31,12 @@ import 'features/auth/forgot_password_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isAndroid) {
+    WebViewPlatform.instance = AndroidWebViewPlatform();
+  } else if (Platform.isIOS) {
+    WebViewPlatform.instance = WebKitWebViewPlatform();
+  }
 
   final apiClient = ApiClient();
   final authVM = AuthViewModel(apiClient);
@@ -106,6 +117,18 @@ void main() async {
               return previous;
             }
             return AddBeerViewModel(userId: authVM.userId!);
+          },
+        ),
+
+        // Subscription
+        ChangeNotifierProxyProvider<AuthViewModel, SubscriptionViewModel?>(
+          create: (_) => null,
+          update: (context, authVM, previous) {
+            if (authVM.userId == null) return null;
+
+            if (previous != null) return previous;
+
+            return SubscriptionViewModel(context.read<ApiClient>());
           },
         ),
       ],
