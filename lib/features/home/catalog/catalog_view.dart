@@ -188,13 +188,19 @@ class _CatalogViewState extends State<CatalogView> {
           onTapDown: (_) => isPressed.value = true,
           onTapUp: (_) => isPressed.value = false,
           onTapCancel: () => isPressed.value = false,
-          onTap: () {
-            Navigator.of(context).push(
+         onTap: () async {
+            // Explicitly expect a boolean return
+            final dynamic result = await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) =>
                     BeerDetailView(beer: beerModel, isFromCatalog: true),
               ),
             );
+
+            // Refresh only if the result is true
+            if (result == true && mounted) {
+              context.read<BeerViewModel>().loadCatalog(isRefresh: true);
+            }
           },
           child: AnimatedScale(
             scale: pressed ? 0.96 : 1.0,
