@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui';
 
 import '../beer_model.dart';
 import '../collection/collection_view_model.dart';
@@ -8,6 +9,8 @@ import '../collection/collection_model.dart';
 import '../wishlist/wishlist_view_model.dart';
 import '../beer_view_model.dart';
 import '../../auth/auth_view_model.dart';
+import '../../update/update_beer_view.dart';
+import '../../home/add_beer/add_beer_view_model.dart';
 
 import './widgets/rating_section.dart';
 import './widgets/tasting_panel.dart';
@@ -37,8 +40,11 @@ class BeerDetailView extends StatefulWidget {
 }
 
 class _BeerDetailViewState extends State<BeerDetailView> {
+  late Beer _beer;
+
   late double _currentRating;
   late double _originalRating;
+
   bool _isSavingRating = false;
   bool _isDegustationOpen = false;
   bool _isAddingToWishlist = false;
@@ -49,6 +55,8 @@ class _BeerDetailViewState extends State<BeerDetailView> {
   void initState() {
     super.initState();
 
+    _beer = widget.beer;
+
     _currentRating = widget.collectionItem?.rating ?? 0.0;
     _originalRating = _currentRating;
 
@@ -58,10 +66,10 @@ class _BeerDetailViewState extends State<BeerDetailView> {
       final collectionVM = context.read<CollectionViewModel>();
 
       final freshItem = collectionVM.userCollection.firstWhere(
-        (it) => it.beer.id == widget.beer.id,
-        orElse: () => CollectionItem(beer: widget.beer),
+        (it) => it.beer.id == _beer.id,
+        orElse: () => CollectionItem(beer: _beer),
       );
-      final tastingData = await collectionVM.fetchBeerTasting(widget.beer.id);
+      final tastingData = await collectionVM.fetchBeerTasting(_beer.id);
 
       bool hasTastingData =
           tastingData != null &&
@@ -130,9 +138,9 @@ class _BeerDetailViewState extends State<BeerDetailView> {
   }
 
   Widget _buildBeerImage({double size = 180}) {
-    if (widget.beer.imageUrl != null && widget.beer.imageUrl!.isNotEmpty) {
+    if (_beer.imageUrl != null && _beer.imageUrl!.isNotEmpty) {
       return Image.network(
-        widget.beer.imageUrl!,
+        _beer.imageUrl!,
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) =>
             Icon(Icons.sports_bar, size: size, color: const Color(0xFF0097A7)),
@@ -147,11 +155,10 @@ class _BeerDetailViewState extends State<BeerDetailView> {
     final isPremium = authVM.isPremium;
 
     final collectionVM = context.watch<CollectionViewModel>();
-    final bool inCollection = collectionVM.isBeerInCollection(widget.beer.id);
+    final bool inCollection = collectionVM.isBeerInCollection(_beer.id);
 
     final wishlistVM = context.watch<WishlistViewModel?>();
-    final bool inWishlist =
-        wishlistVM?.isBeerInWishlist(widget.beer.id) ?? false;
+    final bool inWishlist = wishlistVM?.isBeerInWishlist(_beer.id) ?? false;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
@@ -170,7 +177,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
-                widget.beer.brand,
+                _beer.brand,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 21,
@@ -189,7 +196,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
-                widget.beer.genericName ?? "Inconnu",
+                _beer.genericName ?? "Inconnu",
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16, color: Colors.black54),
               ),
@@ -244,10 +251,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                 onSave: () async {
                   setState(() => _isSavingRating = true);
                   try {
-                    await collectionVM.updateRating(
-                      widget.beer.id,
-                      _currentRating,
-                    );
+                    await collectionVM.updateRating(_beer.id, _currentRating);
 
                     setState(() {
                       _originalRating = _currentRating;
@@ -370,7 +374,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => BeerDetailView(
-                            beer: widget.beer,
+                            beer: _beer,
                             isFromCollection: true,
                             isFromScan: false,
                             collectionItem: _userItem,
@@ -405,7 +409,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
             if (_isDegustationOpen)
               FutureBuilder<Map<String, dynamic>?>(
                 future: context.read<CollectionViewModel>().fetchBeerTasting(
-                  widget.beer.id,
+                  _beer.id,
                 ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -413,13 +417,13 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                   }
 
                   return TastingPanel(
-                    beer: widget.beer,
+                    beer: _beer,
                     initialItem: snapshot.hasData
-                        ? _mapToCollectionItem(widget.beer, snapshot.data!)
+                        ? _mapToCollectionItem(_beer, snapshot.data!)
                         : widget.collectionItem,
                     onSave: (data) async {
                       await context.read<CollectionViewModel>().updateTasting(
-                        widget.beer.id,
+                        _beer.id,
                         data,
                       );
                       setState(() => _isDegustationOpen = true);
@@ -435,31 +439,50 @@ class _BeerDetailViewState extends State<BeerDetailView> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  if (!widget.isFromScan)
-                    // Tasting Action
-                    _buildIconButton(
-                      label: _isDegustationOpen ? "Fermer" : "Déguster",
-                      icon: Icons.local_drink,
-                      color: const Color(0xFF0097A7),
-                      onTap: () => setState(
-                        () => _isDegustationOpen = !_isDegustationOpen,
+                  if (!widget.isFromCatalog &&
+                      !widget.isFromWishlist &&
+                      !widget.isFromCatalog)
+                    if (!widget.isFromScan)
+                      // Tasting Action
+                      _buildIconButton(
+                        label: _isDegustationOpen ? "Fermer" : "Déguster",
+                        icon: Icons.local_drink,
+                        color: const Color(0xFF0097A7),
+                        onTap: () => setState(
+                          () => _isDegustationOpen = !_isDegustationOpen,
+                        ),
                       ),
-                    ),
 
-                  // Premium Action
-                  _buildIconButton(
-                    label: "Infos",
-                    icon: Icons.edit_note,
-                    color: Colors.purple,
-                    isPremiumLocked: !isPremium,
-                    onTap: () {
-                      if (isPremium) {
-                        // Logic for adding info
-                      } else {
-                        _showPremiumDialog(context);
-                      }
-                    },
-                  ),
+                  if (!widget.isFromCatalog)
+                    // Premium Action
+                    _buildIconButton(
+                      label: "Infos",
+                      icon: Icons.edit_note,
+                      color: Colors.purple,
+                      isPremiumLocked: !isPremium,
+                      onTap: () async {
+                        if (isPremium) {
+                          context.read<AddBeerViewModel>().prefillWithBeer(
+                            _beer,
+                          );
+
+                          final Beer? updatedBeer = await Navigator.of(context)
+                              .push<Beer>(
+                                MaterialPageRoute(
+                                  builder: (context) => const UpdateBeerView(),
+                                ),
+                              );
+
+                          if (updatedBeer != null && mounted) {
+                            setState(() {
+                              _beer = updatedBeer;
+                            });
+                          }
+                        } else {
+                          _showPremiumDialog(context);
+                        }
+                      },
+                    ),
 
                   _buildIconButton(
                     label: "Partager",
@@ -467,7 +490,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
                     color: const Color(0xFF0097A7),
                     onTap: () {
                       final vm = context.read<BeerViewModel>();
-                      final String pId = widget.beer.productId ?? "";
+                      final String pId = _beer.productId ?? "";
 
                       vm.fetchBarcode(pId);
 
@@ -566,50 +589,98 @@ class _BeerDetailViewState extends State<BeerDetailView> {
           children: [
             GestureDetector(
               onTap: () => _showFullScreenImage(context),
-              child: SizedBox(
+              child: Container(
                 height: 200,
                 width: double.infinity,
-                child: Center(child: _buildBeerImage()),
+                // Round top corners
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Blurred background layer restricted to this container
+                    Positioned.fill(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // The background image is FORCED in BoxFit.cover for the "large" look.
+                          if (_beer.imageUrl != null &&
+                              _beer.imageUrl!.isNotEmpty)
+                            Opacity(
+                              opacity: 0.6,
+                              child: Image.network(
+                                _beer.imageUrl!,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          else
+                            // If no image (blurred icon)
+                            Opacity(
+                              opacity: 0.6,
+                              child: Icon(
+                                Icons.sports_bar,
+                                size: 300,
+                                color: const Color(0xFF0097A7),
+                              ),
+                            ),
+
+                          BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: 12.0,
+                              sigmaY: 12.0,
+                            ),
+                            child: Container(
+                              color: Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Center(child: _buildBeerImage()),
+                  ],
+                ),
               ),
             ),
             const Divider(height: 1),
             _buildInfoRow(
               "Alcool:",
-              widget.beer.abv != null ? "${widget.beer.abv}% Vol." : "--",
+              _beer.abv != null ? "${_beer.abv}% Vol." : "--",
             ),
             const Divider(height: 1),
 
-            if (widget.beer.type != null && widget.beer.type!.isNotEmpty) ...[
-              _buildInfoRow("Type:", widget.beer.type!),
+            if (_beer.type != null && _beer.type!.isNotEmpty) ...[
+              _buildInfoRow("Type:", _beer.type!),
               const Divider(height: 1),
             ],
 
-            if (widget.beer.manufacturingPlace != null &&
-                widget.beer.manufacturingPlace!.isNotEmpty) ...[
-              _buildInfoRow("Origine:", widget.beer.manufacturingPlace!),
+            if (_beer.manufacturingPlace != null &&
+                _beer.manufacturingPlace!.isNotEmpty) ...[
+              _buildInfoRow("Origine:", _beer.manufacturingPlace!),
               const Divider(height: 1),
             ],
 
-            if (widget.beer.quantity != null &&
-                widget.beer.quantity!.isNotEmpty) ...[
-              _buildInfoRow("Quantité:", widget.beer.formattedQuantity),
+            if (_beer.quantity != null && _beer.quantity!.isNotEmpty) ...[
+              _buildInfoRow("Quantité:", _beer.formattedQuantity),
               const Divider(height: 1),
             ],
 
-            if (widget.beer.ingredients != null &&
-                widget.beer.ingredients!.isNotEmpty) ...[
-              _buildInfoRow("Ingrédients:", widget.beer.ingredients!),
+            if (_beer.ingredients != null && _beer.ingredients!.isNotEmpty) ...[
+              _buildInfoRow("Ingrédients:", _beer.ingredients!),
               const Divider(height: 1),
             ],
 
-            if (widget.beer.allergens != null &&
-                widget.beer.allergens!.isNotEmpty) ...[
-              _buildInfoRow("Allergènes:", widget.beer.allergens!),
+            if (_beer.allergens != null && _beer.allergens!.isNotEmpty) ...[
+              _buildInfoRow("Allergènes:", _beer.allergens!),
               const Divider(height: 1),
             ],
 
-            if (widget.beer.hops != null && widget.beer.hops!.isNotEmpty) ...[
-              _buildInfoRow("Houblons:", widget.beer.hops!),
+            if (_beer.hops != null && _beer.hops!.isNotEmpty) ...[
+              _buildInfoRow("Houblons:", _beer.hops!),
               const Divider(height: 1),
             ],
 
@@ -697,7 +768,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
     setState(() => _isAddingToCollection = true);
 
     try {
-      await context.read<CollectionViewModel>().addToCollection(widget.beer.id);
+      await context.read<CollectionViewModel>().addToCollection(_beer.id);
 
       if (!mounted) return;
 
@@ -727,7 +798,7 @@ class _BeerDetailViewState extends State<BeerDetailView> {
     setState(() => _isAddingToWishlist = true);
 
     try {
-      await context.read<WishlistViewModel>().addToWishlist(widget.beer.id);
+      await context.read<WishlistViewModel>().addToWishlist(_beer.id);
 
       if (!mounted) return;
 
