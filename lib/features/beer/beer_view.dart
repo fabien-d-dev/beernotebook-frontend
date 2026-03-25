@@ -28,10 +28,7 @@ class _BeerViewState extends State<BeerView> {
   Widget build(BuildContext context) {
     final vm = context.watch<CollectionViewModel>();
     final isLoading = vm.isLoading;
-    final userBeers = vm.userCollection;
-
-    // final sortedBeers = List<CollectionItem>.from(userBeers)
-    //   ..sort((a, b) => (b.userRating ?? 0).compareTo(a.userRating ?? 0));
+    final userBeers = vm.sortedCollection;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
@@ -90,19 +87,26 @@ class _BeerViewState extends State<BeerView> {
     );
   }
 
-  // UI Components
   Widget _buildHeaderFilters() {
+    final vm = context.read<CollectionViewModel>();
+
+    final sortType = context.select<CollectionViewModel, BeerSortType>(
+      (v) => v.currentSortType,
+    );
+
+    String sortLabel = "Tri: Note";
+    if (sortType == BeerSortType.brewery) sortLabel = "Tri: Brasserie";
+    if (sortType == BeerSortType.date) sortLabel = "Tri: Date";
+
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       child: Row(
         children: [
           Expanded(
             child: _buildHeaderButton(
-              "Tri: Note",
+              sortLabel,
               const Color(0xFF0097A7),
-              onTap: () {
-                // TODO: Add sorting logic
-              },
+              onTap: () => vm.toggleSort(),
             ),
           ),
           const SizedBox(width: 10),
@@ -176,8 +180,8 @@ class _BeerViewState extends State<BeerView> {
             HapticFeedback.mediumImpact();
             _showOptions(context, item);
           },
-          onTap: () {
-            Navigator.of(context).push(
+          onTap: () async {
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => BeerDetailView(
                   beer: item.beer,
@@ -186,6 +190,10 @@ class _BeerViewState extends State<BeerView> {
                 ),
               ),
             );
+
+            if (!mounted) return;
+
+            context.read<CollectionViewModel>().loadUserCollection();
           },
 
           splashColor: const Color.fromARGB(
@@ -257,7 +265,7 @@ class _BeerViewState extends State<BeerView> {
             ? Image.network(
                 url,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
+                errorBuilder: (_, _, _) => _buildPlaceholderIcon(),
               )
             : _buildPlaceholderIcon(),
       ),
