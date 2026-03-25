@@ -97,7 +97,8 @@ class UpdateBeerView extends StatelessWidget {
 
             const SizedBox(height: 15),
 
-            if (viewModel.imageFile == null && viewModel.existingImageUrl == null)
+            if (viewModel.imageFile == null &&
+                viewModel.existingImageUrl == null)
               _buildCustomButton(
                 "Prendre une photo",
                 const Color(0xFF0097A7),
@@ -234,6 +235,10 @@ class UpdateBeerView extends StatelessWidget {
                             if (success &&
                                 context.mounted &&
                                 viewModel.createdBeer != null) {
+                              context
+                                  .read<CollectionViewModel>()
+                                  .loadUserCollection();
+
                               final beerResult = viewModel.createdBeer!;
 
                               if (isUpdate) {
@@ -254,24 +259,20 @@ class UpdateBeerView extends StatelessWidget {
                                         "Les informations ont été mises à jour avec succès.",
                                         textAlign: TextAlign.center,
                                       ),
-                                      actionsAlignment: MainAxisAlignment.center,
+                                      actionsAlignment:
+                                          MainAxisAlignment.center,
                                       actions: [
                                         _buildDialogButton(
                                           context,
-                                          label: "Voir la fiche",
+                                          label: "Retour aux détails",
                                           color: const Color(0xFF0097A7),
-                                          icon: Icons.visibility,
+                                          icon: Icons.arrow_back,
                                           onTap: () {
                                             Navigator.pop(dialogContext);
-                                            Navigator.pushReplacement(
+
+                                            Navigator.pop(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    BeerDetailView(
-                                                      beer: beerResult,
-                                                      isFromCollection: true,
-                                                    ),
-                                              ),
+                                              viewModel.createdBeer,
                                             );
                                           },
                                         ),
@@ -297,7 +298,8 @@ class UpdateBeerView extends StatelessWidget {
                                         "Souhaitez-vous l'ajouter à vos listes ?",
                                         textAlign: TextAlign.center,
                                       ),
-                                      actionsAlignment: MainAxisAlignment.center,
+                                      actionsAlignment:
+                                          MainAxisAlignment.center,
                                       actions: [
                                         Column(
                                           mainAxisSize: MainAxisSize.min,
@@ -311,13 +313,17 @@ class UpdateBeerView extends StatelessWidget {
                                                 try {
                                                   // API call to link the beer to the user
                                                   await context
-                                                      .read<CollectionViewModel>()
+                                                      .read<
+                                                        CollectionViewModel
+                                                      >()
                                                       .addToCollection(
                                                         beerResult.id,
                                                       );
 
                                                   if (context.mounted) {
-                                                    Navigator.pop(dialogContext);
+                                                    Navigator.pop(
+                                                      dialogContext,
+                                                    );
 
                                                     Navigator.pushReplacement(
                                                       context,
@@ -325,16 +331,29 @@ class UpdateBeerView extends StatelessWidget {
                                                         builder: (context) =>
                                                             BeerDetailView(
                                                               beer: beerResult,
-                                                              collectionItem: null,
-                                                              isFromCollection: true,
+                                                              collectionItem:
+                                                                  null,
+                                                              isFromCollection:
+                                                                  true,
                                                             ),
                                                       ),
                                                     );
                                                   }
                                                 } catch (e) {
-                                                  debugPrint(
-                                                    "❌ Erreur collection: $e",
-                                                  );
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          "Erreur : Vérifiez les champs et la connexion.",
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                  return;
                                                 }
                                               },
                                             ),
@@ -353,10 +372,14 @@ class UpdateBeerView extends StatelessWidget {
                                                 try {
                                                   await context
                                                       .read<WishlistViewModel>()
-                                                      .addToWishlist(beerResult.id);
+                                                      .addToWishlist(
+                                                        beerResult.id,
+                                                      );
 
                                                   if (context.mounted) {
-                                                    Navigator.pop(dialogContext);
+                                                    Navigator.pop(
+                                                      dialogContext,
+                                                    );
 
                                                     Navigator.pushReplacement(
                                                       context,
@@ -364,7 +387,8 @@ class UpdateBeerView extends StatelessWidget {
                                                         builder: (context) =>
                                                             BeerDetailView(
                                                               beer: beerResult,
-                                                              isFromWishlist: true,
+                                                              isFromWishlist:
+                                                                  true,
                                                             ),
                                                       ),
                                                     );
