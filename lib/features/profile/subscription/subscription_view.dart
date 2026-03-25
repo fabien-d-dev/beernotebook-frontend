@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../auth/auth_view_model.dart';
+import 'subscription_view_model.dart';
+import 'checkout_view.dart';
 
 class SubscriptionView extends StatelessWidget {
   const SubscriptionView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final subVM = context.watch<SubscriptionViewModel>();
+    final authVM = context.read<AuthViewModel>();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
       appBar: AppBar(
@@ -127,9 +134,46 @@ class SubscriptionView extends StatelessWidget {
               width: double.infinity,
               height: 65,
               child: FilledButton(
-                onPressed: () {
-                  // Payment action
-                },
+                onPressed: subVM.isLoading
+                    ? null
+                    : () async {
+                        final currentId = authVM.userId;
+
+                        if (currentId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Erreur: Utilisateur non identifié",
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        // Get the Stripe URL using the ID
+                        final url = await subVM.getPaymentUrl(currentId);
+
+                        if (url != null && context.mounted) {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CheckoutView(url: url),
+                            ),
+                          );
+
+                          if (result == 'success' && context.mounted) {
+                            await authVM.checkSubscriptionStatus();
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Félicitations, vous êtes Premium !",
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0097A7),
                   shape: RoundedRectangleBorder(
@@ -137,20 +181,22 @@ class SubscriptionView extends StatelessWidget {
                   ),
                   elevation: 4,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.credit_card, size: 30),
-                    SizedBox(width: 15),
-                    Text(
-                      "Paiement sécurisé",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                child: subVM.isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.credit_card, size: 30),
+                          SizedBox(width: 15),
+                          Text(
+                            "Paiement sécurisé",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],
