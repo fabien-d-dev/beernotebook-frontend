@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../auth/auth_view_model.dart';
 import 'home_view_model.dart';
 import 'catalog/catalog_view.dart';
 import 'article/article_view.dart';
 import 'add_beer/add_beer_view.dart';
-import '../auth/auth_view_model.dart';
-import './add_beer/add_beer_view_model.dart';
+import 'add_beer/add_beer_view_model.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -15,13 +16,53 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  late PageController _pageController;
+  Timer? _timer;
+  int _currentPage = 0;
+
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: 0);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<HomeViewModel>().loadArticles();
+      context.read<HomeViewModel>().loadArticles().then((_) {
+        _startAutoPlay();
+      });
     });
+  }
+
+  void _startAutoPlay() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      final homeVM = context.read<HomeViewModel>();
+      if (homeVM.articles.isNotEmpty) {
+        if (_currentPage < homeVM.articles.length - 1) {
+          _currentPage++;
+        } else {
+          _currentPage = 0;
+        }
+
+        if (_pageController.hasClients) {
+          _pageController.animateToPage(
+            _currentPage,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    });
+  }
+
+  void _resetTimer() {
+    _startAutoPlay();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,7 +87,11 @@ class _HomeViewState extends State<HomeView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildDashboardButton(Icons.qr_code_scanner, "Scanner"),
+              _buildDashboardButton(
+                Icons.qr_code_scanner,
+                "Scanner",
+                onTap: () => Navigator.pushNamed(context, '/scan'),
+              ),
               _buildDashboardButton(
                 Icons.menu_book_outlined,
                 "Catalogue",
@@ -58,7 +103,6 @@ class _HomeViewState extends State<HomeView> {
                 Icons.edit_note,
                 "Ajouter",
                 onTap: () {
-
                   final authVM = Provider.of<AuthViewModel>(
                     context,
                     listen: false,
@@ -68,7 +112,6 @@ class _HomeViewState extends State<HomeView> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => ChangeNotifierProvider(
-
                           create: (_) =>
                               AddBeerViewModel(userId: authVM.userId!),
                           child: const AddBeerView(),
@@ -76,7 +119,6 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     );
                   } else {
-
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Erreur: Utilisateur non identifié"),
@@ -95,31 +137,34 @@ class _HomeViewState extends State<HomeView> {
           Expanded(
             child: homeVM.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : PageView.builder(
-                    itemCount: homeVM.articles.length,
-                    itemBuilder: (context, index) {
-                      final article = homeVM.articles[index];
-                      final String? dbImage = article['image'];
-                      final String displayImage =
-                          (dbImage != null && dbImage.isNotEmpty)
-                          ? dbImage
-                          : 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?q=80&w=1000&auto=format&fit=crop';
+                : Listener(
+                    onPointerDown: (_) => _resetTimer(),
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: homeVM.articles.length,
+                      onPageChanged: (index) {
+                        _currentPage = index;
+                      },
+                      itemBuilder: (context, index) {
+                        final article = homeVM.articles[index];
+                        final String? dbImage = article['image'];
 
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ArticleView(article: article),
-                            ),
-                          );
-                        },
-                        child: _buildArticleSlide(
-                          article['title'] ?? 'Sans titre',
-                          displayImage,
-                        ),
-                      );
-                    },
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ArticleView(article: article),
+                              ),
+                            );
+                          },
+                          child: _buildArticleSlide(
+                            article['title'] ?? 'Sans titre',
+                            dbImage,
+                          ),
+                        );
+                      },
+                    ),
                   ),
           ),
         ],
@@ -139,8 +184,8 @@ class _HomeViewState extends State<HomeView> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color.fromARGB(31, 0, 0, 0).withValues(), 
-            blurRadius: 10, 
+            color: const Color.fromARGB(31, 0, 0, 0).withValues(),
+            blurRadius: 10,
             offset: const Offset(0, -4),
           ),
         ],
@@ -157,13 +202,15 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildArticleSlide(String title, String imageUrl) {
+  Widget _buildArticleSlide(String title, String? imageUrl) {
+    final ImageProvider imageProvider =
+        (imageUrl != null && imageUrl.isNotEmpty)
+        ? NetworkImage(imageUrl)
+        : const AssetImage('assets/images/placeholder.jpg');
+
     return Container(
       decoration: BoxDecoration(
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
-        ),
+        image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
       ),
       child: Container(
         alignment: Alignment.bottomCenter,
@@ -174,7 +221,7 @@ class _HomeViewState extends State<HomeView> {
             end: Alignment.bottomCenter,
             colors: [
               Colors.transparent,
-              const Color.fromARGB(222, 0, 0, 0).withValues(),
+              const Color.fromARGB(247, 0, 0, 0).withValues(),
             ],
           ),
         ),
