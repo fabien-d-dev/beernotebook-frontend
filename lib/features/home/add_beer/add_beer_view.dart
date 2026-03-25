@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import './add_beer_view_model.dart';
+import '../../beer/beer_detail/beer_detail_view.dart';
 import '../../../core/utils/beer_data.dart';
-import 'add_beer_view_model.dart';
 
 class AddBeerView extends StatelessWidget {
   const AddBeerView({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     final viewModel = Provider.of<AddBeerViewModel>(context);
 
     return Scaffold(
@@ -89,15 +89,59 @@ class AddBeerView extends StatelessWidget {
               "Image",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 10),
-            _buildCustomButton(
-              "Caméra",
-              const Color(0xFF0097A7),
-              Icons.camera_alt,
-              () {
-                // Logic for camera
-              },
-            ),
+
+            const SizedBox(height: 15),
+
+            if (viewModel.imageFile == null)
+              _buildCustomButton(
+                "Prendre une photo",
+                const Color(0xFF0097A7),
+                Icons.camera_alt,
+                () => viewModel.takePhoto(),
+              )
+            else
+              Column(
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: AspectRatio(
+                      aspectRatio: 3 / 4,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromARGB(
+                                150,
+                                0,
+                                0,
+                                0,
+                              ).withValues(),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(9),
+                          child: Image.file(
+                            viewModel.imageFile!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildCustomButton(
+                    "Recommencer",
+                    const Color.fromARGB(255, 240, 146, 53),
+                    Icons.refresh,
+                    () => viewModel.resetPhoto(),
+                  ),
+                ],
+              ),
 
             const SizedBox(height: 20),
 
@@ -150,42 +194,93 @@ class AddBeerView extends StatelessWidget {
                           "Valider",
                           const Color(0xFF689F38),
                           null,
-                          () async {
 
-                            bool success = await viewModel.submitBeer();
+                          () async {
+                            bool success;
+
+                            if (viewModel.existingBeerId != null) {
+                              success = await viewModel.updateBeer();
+                            } else {
+                              success = await viewModel.submitBeer();
+                            }
+
                             if (success && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: Colors.white,
-                                      ),
-                                      SizedBox(width: 12),
-                                      Text(
-                                        "Bière ajoutée avec succès !",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                              final newBeer = viewModel.createdBeer;
+
+                              if (newBeer == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Erreur : Impossible de récupérer les données de la bière",
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext dialogContext) {
+                                  return AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    title: const Text(
+                                      "Succès ! 🍻",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    content: Text(
+                                      "La bière ${newBeer.brand} ${newBeer.genericName ?? ''} a été enregistrée.",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    actionsAlignment: MainAxisAlignment.center,
+                                    actions: [
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _buildDialogButton(
+                                            context,
+                                            label: "Voir la fiche produit",
+                                            color: const Color(0xFF689F38),
+                                            icon: Icons.visibility,
+                                            onTap: () {
+                                              Navigator.pop(dialogContext);
+
+                                              // Use pushReplacement to clear the form from the stack
+                                              Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      BeerDetailView(
+                                                        beer: newBeer,
+                                                        collectionItem: null,
+                                                        isFromCollection: false,
+                                                        isFromCatalog: true,
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                          const SizedBox(height: 10),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(dialogContext);
+                                              Navigator.pop(context);
+                                            },
+                                            child: const Text(
+                                              "Retour à l'accueil",
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
-                                  ),
-                                  backgroundColor: const Color(
-                                    0xFF689F38,
-                                  ), 
-                                  behavior: SnackBarBehavior
-                                      .floating, 
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  margin: const EdgeInsets.all(
-                                    20,
-                                  ),
-                                  duration: const Duration(seconds: 2),
-                                ),
+                                  );
+                                },
                               );
-                              Navigator.pop(context);
                             }
                           },
                         ),
@@ -211,7 +306,6 @@ class AddBeerView extends StatelessWidget {
   }
 
   // WIDGET HELPERS
-
   Widget _buildInputField(
     String label,
     String hint,
@@ -219,6 +313,15 @@ class AddBeerView extends StatelessWidget {
     bool isRequired = false,
     String? suffix,
   }) {
+    TextInputType selectedKeyboard;
+    if (label == "Numéro de produit" || label == "Quantité") {
+      selectedKeyboard = TextInputType.number;
+    } else if (label == "Degré d'alcool") {
+      selectedKeyboard = const TextInputType.numberWithOptions(decimal: true);
+    } else {
+      selectedKeyboard = TextInputType.text;
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -240,6 +343,7 @@ class AddBeerView extends StatelessWidget {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            keyboardType: selectedKeyboard,
             decoration: InputDecoration(
               hintText: hint,
               fillColor: Colors.white,
@@ -310,6 +414,36 @@ class AddBeerView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDialogButton(
+    BuildContext context, {
+    required String label,
+    required Color color,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, color: Colors.white, size: 20),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
     );
   }
