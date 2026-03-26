@@ -51,7 +51,7 @@ class OptionsView extends StatelessWidget {
             icon: Icons.delete_outline,
             label: "Supprimer le compte",
             color: const Color(0xFFD35252),
-            onTap: () => debugPrint("Action: Supprimer"),
+            onTap: () => _showDeleteConfirmation(context),
           ),
           _buildOptionItem(
             icon: Icons.logout,
@@ -119,6 +119,51 @@ void _showLogoutDialog(BuildContext context) {
             }
           },
           child: const Text("Déconnexion", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
+
+void _showDeleteConfirmation(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Supprimer le compte ?"),
+      content: const Text(
+        "Cette action est irréversible. Toutes vos bières, notes et dégustations seront définitivement supprimées.",
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Annuler", style: TextStyle(color: Colors.grey)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFD35252),
+          ),
+          onPressed: () async {
+            Navigator.pop(context);
+            try {
+              await context.read<AuthViewModel>().deleteUserAccount();
+
+              if (context.mounted) {
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Erreur : ${e.toString()}")),
+                );
+              }
+            }
+          },
+          child: const Text(
+            "Supprimer définitivement",
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       ],
     ),
