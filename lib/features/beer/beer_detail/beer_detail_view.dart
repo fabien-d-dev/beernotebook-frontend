@@ -592,57 +592,49 @@ class _BeerDetailViewState extends State<BeerDetailView> {
               child: Container(
                 height: 200,
                 width: double.infinity,
-                // Round top corners
-                clipBehavior: Clip.antiAlias,
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
+
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(15),
                     topRight: Radius.circular(15),
                   ),
-                ),
-                child: Stack(
-                  children: [
-                    // Blurred background layer restricted to this container
-                    Positioned.fill(
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // The background image is FORCED in BoxFit.cover for the "large" look.
-                          if (_beer.imageUrl != null &&
-                              _beer.imageUrl!.isNotEmpty)
-                            Opacity(
-                              opacity: 0.6,
-                              child: Image.network(
-                                _beer.imageUrl!,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          else
-                            // If no image (blurred icon)
-                            Opacity(
-                              opacity: 0.6,
-                              child: Icon(
-                                Icons.sports_bar,
-                                size: 300,
-                                color: const Color(0xFF0097A7),
-                              ),
-                            ),
-
-                          BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: 12.0,
-                              sigmaY: 12.0,
-                            ),
-                            child: Container(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
-                          ),
-                        ],
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child:
+                            _beer.imageUrl != null && _beer.imageUrl!.isNotEmpty
+                            ? Image.network(_beer.imageUrl!, fit: BoxFit.cover)
+                            : Container(color: Colors.grey[200]),
                       ),
-                    ),
 
-                    Center(child: _buildBeerImage()),
-                  ],
+                      Positioned.fill(
+                        child:
+                            _beer.imageUrl != null && _beer.imageUrl!.isNotEmpty
+                            ? ImageFiltered(
+                                imageFilter: ImageFilter.blur(
+                                  sigmaX: 20.0,
+                                  sigmaY: 20.0,
+                                  tileMode: TileMode.mirror,
+                                ),
+                                child: Image.network(
+                                  _beer.imageUrl!,
+                                  fit: BoxFit.cover,
+
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(color: Colors.white),
+                                ),
+                              )
+                            : Container(color: Colors.white),
+                      ),
+
+                      Center(
+                        child: Hero(
+                          tag: 'beer_image',
+                          child: _buildBeerImage(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
