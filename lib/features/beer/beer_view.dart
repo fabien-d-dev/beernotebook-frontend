@@ -180,20 +180,29 @@ class _BeerViewState extends State<BeerView> {
             HapticFeedback.mediumImpact();
             _showOptions(context, item);
           },
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => BeerDetailView(
-                  beer: item.beer,
-                  collectionItem: item,
-                  isFromCollection: true,
-                ),
-              ),
-            );
+          onTap: () {
 
-            if (!mounted) return;
+            HapticFeedback.lightImpact();
 
-            context.read<CollectionViewModel>().loadUserCollection();
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (context) => BeerDetailView(
+                      beer: item.beer,
+                      collectionItem: item,
+                      isFromCollection: true,
+                    ),
+                  ),
+                )
+                .then((_) {
+
+                  if (mounted) {
+
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      context.read<CollectionViewModel>().loadUserCollection();
+                    });
+                  }
+                });
           },
 
           splashColor: const Color.fromARGB(
