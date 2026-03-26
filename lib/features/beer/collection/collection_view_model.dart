@@ -8,6 +8,7 @@ class CollectionViewModel extends ChangeNotifier {
   final ApiClient _apiClient;
   final int userId;
   final int collectionId;
+  final Map<int, Map<String, dynamic>> _tastingCache = {};
 
   CollectionViewModel(this._apiClient, this.userId, this.collectionId);
 
@@ -57,6 +58,8 @@ class CollectionViewModel extends ChangeNotifier {
   Future<void> loadUserCollection() async {
     isLoading = true;
     notifyListeners();
+
+    _tastingCache.clear();
 
     try {
       final List<dynamic> rawData = await _apiClient.getUserBeers(userId);
@@ -108,6 +111,8 @@ class CollectionViewModel extends ChangeNotifier {
   Future<void> updateTasting(int beerId, Map<String, dynamic> data) async {
     try {
       await _apiClient.saveBeerTasting(collectionId, beerId, data);
+      
+      _tastingCache[beerId] = Map<String, dynamic>.from(data);
 
       final index = _userCollection.indexWhere(
         (item) => item.beer.id == beerId,
@@ -138,10 +143,16 @@ class CollectionViewModel extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> fetchBeerTasting(int beerId) async {
+    if (_tastingCache.containsKey(beerId)) {
+      return _tastingCache[beerId];
+    }
+
     try {
       final data = await _apiClient.getBeerTasting(collectionId, beerId);
 
       if (data != null) {
+        _tastingCache[beerId] = Map<String, dynamic>.from(data);
+
         final index = _userCollection.indexWhere(
           (item) => item.beer.id == beerId,
         );
