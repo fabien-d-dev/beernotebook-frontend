@@ -1,4 +1,4 @@
-package com.example.beernotebook
+package com.beernotebook.android
 
 import io.flutter.embedding.android.FlutterActivity
 
