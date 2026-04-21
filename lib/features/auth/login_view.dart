@@ -13,6 +13,8 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  bool _isObscure = true;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -115,10 +117,40 @@ class _LoginViewState extends State<LoginView> {
   }) {
     return TextField(
       controller: controller,
-      obscureText: isPassword,
+      obscureText: isPassword ? _isObscure : false,
+
+      enableSuggestions: !isPassword,
+      autocorrect: !isPassword,
+
+      keyboardType: isPassword
+          ? TextInputType.text
+          : TextInputType.emailAddress,
+      autofillHints: isPassword
+          ? [AutofillHints.password]
+          : [AutofillHints.email],
+
+      enableInteractiveSelection: true,
+
+      contextMenuBuilder: (context, editableTextState) {
+        return AdaptiveTextSelectionToolbar.editableText(
+          editableTextState: editableTextState,
+        );
+      },
+
       decoration: InputDecoration(
         labelText: label,
-        suffixIcon: isPassword ? const Icon(Icons.visibility) : null,
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _isObscure ? Icons.visibility : Icons.visibility_off,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isObscure = !_isObscure;
+                  });
+                },
+              )
+            : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );

@@ -168,339 +168,353 @@ class _BeerDetailViewState extends State<BeerDetailView> {
         elevation: 0,
         foregroundColor: Colors.black,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Column(
-          children: [
-            const SizedBox(height: 22),
+      body: SafeArea(
+        bottom: true,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            children: [
+              const SizedBox(height: 22),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Text(
-                _beer.brand,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  _beer.brand,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
 
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              height: 3,
-              width: 60,
-              color: const Color(0xFF4CAF50),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Text(
-                _beer.genericName ?? "Inconnu",
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Colors.black54),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // MAIN BEER CARD
-            _buildMainCard(context),
-
-            const SizedBox(height: 30),
-
-            if (widget.isFromCatalog) ...[
-              // =============
-              // CATALOG VIEW
-              // =============
-              ActionButton(
-                label: inCollection
-                    ? "Déjà dans ma collection"
-                    : "Ajouter à ma collection",
-                icon: inCollection
-                    ? Icons.check_circle
-                    : Icons.add_circle_outline,
-                loadingLabel: "Ajout en cours...",
-                color: inCollection ? Colors.grey : const Color(0xFF0097A7),
-                isLoading: _isAddingToCollection,
-                onPressed: inCollection ? null : _handleAddToCollection,
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                height: 3,
+                width: 60,
+                color: const Color(0xFF4CAF50),
               ),
 
-              const SizedBox(height: 15),
-
-              ActionButton(
-                label: inWishlist
-                    ? "Dans ma wishlist"
-                    : "Ajouter à ma wishlist",
-                icon: inWishlist ? Icons.favorite : Icons.favorite_border,
-                color: inWishlist
-                    ? Colors.grey
-                    : const Color.fromARGB(255, 5, 132, 83),
-                isLoading: _isAddingToWishlist,
-                onPressed: inWishlist ? null : _handleAddToWishlist,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  _beer.genericName ?? "Inconnu",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, color: Colors.black54),
+                ),
               ),
-            ] else if (widget.isFromCollection) ...[
-              // =============
-              // COLLECTION VIEW
-              // =============
-              RatingSection(
-                rating: _currentRating,
-                initialRating: _originalRating,
-                isSaving: _isSavingRating,
-                onRatingChanged: (val) => setState(() => _currentRating = val),
-                onSave: () async {
-                  setState(() => _isSavingRating = true);
-                  try {
-                    await collectionVM.updateRating(_beer.id, _currentRating);
 
-                    setState(() {
-                      _originalRating = _currentRating;
-                      _isSavingRating = false;
-                    });
+              const SizedBox(height: 20),
 
-                    if (!mounted || !context.mounted) return;
+              // MAIN BEER CARD
+              _buildMainCard(context),
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 12),
-                            Text(
-                              "Note mise à jour !",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+              const SizedBox(height: 30),
+
+              if (widget.isFromCatalog) ...[
+                // =============
+                // CATALOG VIEW
+                // =============
+                ActionButton(
+                  label: inCollection
+                      ? "Déjà dans ma collection"
+                      : "Ajouter à ma collection",
+                  icon: inCollection
+                      ? Icons.check_circle
+                      : Icons.add_circle_outline,
+                  loadingLabel: "Ajout en cours...",
+                  color: inCollection ? Colors.grey : const Color(0xFF0097A7),
+                  isLoading: _isAddingToCollection,
+                  onPressed: inCollection ? null : _handleAddToCollection,
+                ),
+
+                const SizedBox(height: 15),
+
+                ActionButton(
+                  label: inWishlist
+                      ? "Dans ma wishlist"
+                      : "Ajouter à ma wishlist",
+                  icon: inWishlist ? Icons.favorite : Icons.favorite_border,
+                  color: inWishlist
+                      ? Colors.grey
+                      : const Color.fromARGB(255, 5, 132, 83),
+                  isLoading: _isAddingToWishlist,
+                  onPressed: inWishlist ? null : _handleAddToWishlist,
+                ),
+              ] else if (widget.isFromCollection) ...[
+                // =============
+                // COLLECTION VIEW
+                // =============
+                RatingSection(
+                  rating: _currentRating,
+                  initialRating: _originalRating,
+                  isSaving: _isSavingRating,
+                  onRatingChanged: (val) =>
+                      setState(() => _currentRating = val),
+                  onSave: () async {
+                    setState(() => _isSavingRating = true);
+                    try {
+                      await collectionVM.updateRating(_beer.id, _currentRating);
+
+                      setState(() {
+                        _originalRating = _currentRating;
+                        _isSavingRating = false;
+                      });
+
+                      if (!mounted || !context.mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white),
+                              SizedBox(width: 12),
+                              Text(
+                                "Note mise à jour !",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: const Color(0xFF689F38),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          margin: const EdgeInsets.all(20),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    } catch (e) {
+                      setState(() => _isSavingRating = false);
+                    }
+                  },
+                ),
+                ActionButton(
+                  label: inWishlist
+                      ? "Dans ma wishlist"
+                      : "Ajouter à ma wishlist",
+                  icon: inWishlist ? Icons.favorite : Icons.favorite_border,
+                  color: inWishlist
+                      ? Colors.grey
+                      : const Color.fromARGB(255, 5, 132, 83),
+                  isLoading: _isAddingToWishlist,
+                  onPressed: inWishlist ? null : _handleAddToWishlist,
+                ),
+              ] else if (widget.isFromWishlist) ...[
+                // =============
+                // WISHLIST VIEW
+                // =============
+                ActionButton(
+                  label: inCollection
+                      ? "Déjà dans ma collection"
+                      : "Ajouter à ma collection",
+                  icon: inCollection
+                      ? Icons.check_circle
+                      : Icons.add_circle_outline,
+                  loadingLabel: "Ajout en cours...",
+                  color: inCollection ? Colors.grey : const Color(0xFF0097A7),
+                  isLoading: _isAddingToCollection,
+                  onPressed: inCollection ? null : _handleAddToCollection,
+                ),
+              ] else if (widget.isFromScan) ...[
+                // =============
+                // FROM SCAN
+                // =============
+                if (inCollection) ...[
+                  const Text(
+                    "Déjà dans la collection",
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  if (_currentRating > 0)
+                    Text.rich(
+                      TextSpan(
+                        text: "Ma note : ",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black54,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: "${(_currentRating).toStringAsFixed(1)} / 10",
+                            style: const TextStyle(color: Color(0xFF0097A7)),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const Text(
+                      "Pas encore notée",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 222, 149, 54),
+                      ),
+                    ),
+                ],
+                const SizedBox(height: 15),
+
+                ActionButton(
+                  label: inCollection
+                      ? "Voir la bière"
+                      : "Ajouter à ma collection",
+                  icon: inCollection
+                      ? Icons.visibility
+                      : Icons.add_circle_outline,
+                  loadingLabel: "Chargement...",
+                  color: const Color(0xFF0097A7),
+                  isLoading: _isAddingToCollection,
+                  onPressed: () {
+                    if (inCollection) {
+                      setState(() {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BeerDetailView(
+                              beer: _beer,
+                              isFromCollection: true,
+                              isFromScan: false,
+                              collectionItem: _userItem,
                             ),
-                          ],
-                        ),
-                        backgroundColor: const Color(0xFF689F38),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        margin: const EdgeInsets.all(20),
-                        duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      });
+                    } else {
+                      _handleAddToCollection();
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 15),
+
+                ActionButton(
+                  label: inWishlist
+                      ? "Dans ma wishlist"
+                      : "Ajouter à ma wishlist",
+                  icon: inWishlist ? Icons.favorite : Icons.favorite_border,
+                  color: inWishlist
+                      ? Colors.grey
+                      : const Color.fromARGB(255, 5, 132, 83),
+                  isLoading: _isAddingToWishlist,
+                  onPressed: inWishlist ? null : _handleAddToWishlist,
+                ),
+              ],
+
+              const SizedBox(height: 30),
+
+              // WIDGET TASTING PANEL
+              if (_isDegustationOpen)
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: context.read<CollectionViewModel>().fetchBeerTasting(
+                    _beer.id,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: TastingPanel(
+                        key: ValueKey(_beer.id),
+                        beer: _beer,
+                        initialItem: snapshot.hasData
+                            ? _mapToCollectionItem(_beer, snapshot.data!)
+                            : widget.collectionItem,
+                        onSave: (data) async {
+                          await context
+                              .read<CollectionViewModel>()
+                              .updateTasting(_beer.id, data);
+                        },
+                        onClose: () =>
+                            setState(() => _isDegustationOpen = false),
                       ),
                     );
-                  } catch (e) {
-                    setState(() => _isSavingRating = false);
-                  }
-                },
-              ),
-              ActionButton(
-                label: inWishlist
-                    ? "Dans ma wishlist"
-                    : "Ajouter à ma wishlist",
-                icon: inWishlist ? Icons.favorite : Icons.favorite_border,
-                color: inWishlist
-                    ? Colors.grey
-                    : const Color.fromARGB(255, 5, 132, 83),
-                isLoading: _isAddingToWishlist,
-                onPressed: inWishlist ? null : _handleAddToWishlist,
-              ),
-            ] else if (widget.isFromWishlist) ...[
-              // =============
-              // WISHLIST VIEW
-              // =============
-              ActionButton(
-                label: inCollection
-                    ? "Déjà dans ma collection"
-                    : "Ajouter à ma collection",
-                icon: inCollection
-                    ? Icons.check_circle
-                    : Icons.add_circle_outline,
-                loadingLabel: "Ajout en cours...",
-                color: inCollection ? Colors.grey : const Color(0xFF0097A7),
-                isLoading: _isAddingToCollection,
-                onPressed: inCollection ? null : _handleAddToCollection,
-              ),
-            ] else if (widget.isFromScan) ...[
-              // =============
-              // FROM SCAN
-              // =============
-              if (inCollection) ...[
-                const Text(
-                  "Déjà dans la collection",
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
+                  },
                 ),
-                const SizedBox(height: 10),
 
-                if (_currentRating > 0)
-                  Text.rich(
-                    TextSpan(
-                      text: "Ma note : ",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black54,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: "${(_currentRating).toStringAsFixed(1)} / 10",
-                          style: const TextStyle(color: Color(0xFF0097A7)),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  const Text(
-                    "Pas encore notée",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 222, 149, 54),
-                    ),
-                  ),
-              ],
-              const SizedBox(height: 15),
-
-              ActionButton(
-                label: inCollection
-                    ? "Voir la bière"
-                    : "Ajouter à ma collection",
-                icon: inCollection
-                    ? Icons.visibility
-                    : Icons.add_circle_outline,
-                loadingLabel: "Chargement...",
-                color: const Color(0xFF0097A7),
-                isLoading: _isAddingToCollection,
-                onPressed: () {
-                  if (inCollection) {
-                    setState(() {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BeerDetailView(
-                            beer: _beer,
-                            isFromCollection: true,
-                            isFromScan: false,
-                            collectionItem: _userItem,
+              // ACTION BUTTON
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 20,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    if (!widget.isFromCatalog &&
+                        !widget.isFromWishlist &&
+                        !widget.isFromCatalog)
+                      if (!widget.isFromScan)
+                        // Tasting Action
+                        _buildIconButton(
+                          label: _isDegustationOpen ? "Fermer" : "Déguster",
+                          icon: Icons.local_drink,
+                          color: const Color(0xFF0097A7),
+                          onTap: () => setState(
+                            () => _isDegustationOpen = !_isDegustationOpen,
                           ),
                         ),
-                      );
-                    });
-                  } else {
-                    _handleAddToCollection();
-                  }
-                },
-              ),
 
-              const SizedBox(height: 15),
-
-              ActionButton(
-                label: inWishlist
-                    ? "Dans ma wishlist"
-                    : "Ajouter à ma wishlist",
-                icon: inWishlist ? Icons.favorite : Icons.favorite_border,
-                color: inWishlist
-                    ? Colors.grey
-                    : const Color.fromARGB(255, 5, 132, 83),
-                isLoading: _isAddingToWishlist,
-                onPressed: inWishlist ? null : _handleAddToWishlist,
-              ),
-            ],
-
-            const SizedBox(height: 30),
-
-            // WIDGET TASTING PANEL
-            if (_isDegustationOpen)
-              FutureBuilder<Map<String, dynamic>?>(
-                future: context.read<CollectionViewModel>().fetchBeerTasting(
-                  _beer.id,
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  return TastingPanel(
-                    beer: _beer,
-                    initialItem: snapshot.hasData
-                        ? _mapToCollectionItem(_beer, snapshot.data!)
-                        : widget.collectionItem,
-                    onSave: (data) async {
-                      await context.read<CollectionViewModel>().updateTasting(
-                        _beer.id,
-                        data,
-                      );
-                      setState(() => _isDegustationOpen = true);
-                    },
-                    onClose: () => setState(() => _isDegustationOpen = false),
-                  );
-                },
-              ),
-
-            // ACTION BUTTON
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  if (!widget.isFromCatalog &&
-                      !widget.isFromWishlist &&
-                      !widget.isFromCatalog)
-                    if (!widget.isFromScan)
-                      // Tasting Action
+                    if (!widget.isFromCatalog)
+                      // Premium Action
                       _buildIconButton(
-                        label: _isDegustationOpen ? "Fermer" : "Déguster",
-                        icon: Icons.local_drink,
-                        color: const Color(0xFF0097A7),
-                        onTap: () => setState(
-                          () => _isDegustationOpen = !_isDegustationOpen,
-                        ),
+                        label: "Infos",
+                        icon: Icons.edit_note,
+                        color: Colors.purple,
+                        isPremiumLocked: !isPremium,
+                        onTap: () async {
+                          if (isPremium) {
+                            context.read<AddBeerViewModel>().prefillWithBeer(
+                              _beer,
+                            );
+
+                            final Beer? updatedBeer =
+                                await Navigator.of(context).push<Beer>(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const UpdateBeerView(),
+                                  ),
+                                );
+
+                            if (updatedBeer != null && mounted) {
+                              setState(() {
+                                _beer = updatedBeer;
+                              });
+                            }
+                          } else {
+                            _showPremiumDialog(context);
+                          }
+                        },
                       ),
 
-                  if (!widget.isFromCatalog)
-                    // Premium Action
                     _buildIconButton(
-                      label: "Infos",
-                      icon: Icons.edit_note,
-                      color: Colors.purple,
-                      isPremiumLocked: !isPremium,
-                      onTap: () async {
-                        if (isPremium) {
-                          context.read<AddBeerViewModel>().prefillWithBeer(
-                            _beer,
-                          );
+                      label: "Partager",
+                      icon: Icons.qr_code_scanner,
+                      color: const Color(0xFF0097A7),
+                      onTap: () {
+                        final vm = context.read<BeerViewModel>();
+                        final String pId = _beer.productId ?? "";
 
-                          final Beer? updatedBeer = await Navigator.of(context)
-                              .push<Beer>(
-                                MaterialPageRoute(
-                                  builder: (context) => const UpdateBeerView(),
-                                ),
-                              );
+                        vm.fetchBarcode(pId);
 
-                          if (updatedBeer != null && mounted) {
-                            setState(() {
-                              _beer = updatedBeer;
-                            });
-                          }
-                        } else {
-                          _showPremiumDialog(context);
-                        }
+                        showShareModal(context, vm, pId);
                       },
                     ),
-
-                  _buildIconButton(
-                    label: "Partager",
-                    icon: Icons.qr_code_scanner,
-                    color: const Color(0xFF0097A7),
-                    onTap: () {
-                      final vm = context.read<BeerViewModel>();
-                      final String pId = _beer.productId ?? "";
-
-                      vm.fetchBarcode(pId);
-
-                      showShareModal(context, vm, pId);
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

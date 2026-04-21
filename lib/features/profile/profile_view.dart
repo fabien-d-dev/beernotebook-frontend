@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'profile_view_model.dart';
 import './options/option_view.dart';
 import './subscription/subscription_view.dart';
+import './subscription/subscription_view_model.dart';
 import '../auth/auth_view_model.dart';
 
 class ProfileView extends StatelessWidget {
@@ -11,15 +12,15 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profileVM = context.watch<ProfileViewModel?>();
-
     final authVM = context.watch<AuthViewModel>();
+    final subVM = context.watch<SubscriptionViewModel>();
     final isPremium = authVM.isPremium;
 
     if (profileVM == null) {
       return const Scaffold(body: SizedBox.shrink());
     }
 
-    if (profileVM.isLoading) {
+    if (profileVM.isLoading || subVM.isLoading) {
       return const Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -45,18 +46,44 @@ class ProfileView extends StatelessWidget {
             // Yellow Header with Counters
             Container(
               color: const Color(0xFFF6D365),
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                // On passe en Column pour ajouter la date au-dessus ou en dessous
                 children: [
-                  _buildStatItem(
-                    "Collection",
-                    profileVM.collectionCount.toString(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildStatItem(
+                        "Collection",
+                        profileVM.collectionCount.toString(),
+                      ),
+                      _buildStatItem(
+                        "Wishlist",
+                        profileVM.wishlistCount.toString(),
+                      ),
+                    ],
                   ),
-                  _buildStatItem(
-                    "Wishlist",
-                    profileVM.wishlistCount.toString(),
-                  ),
+                  const SizedBox(height: 20),
+                  // Affichage de la date de création du carnet
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.center,
+                  //   children: [
+                  //     const Icon(
+                  //       Icons.calendar_today,
+                  //       size: 16,
+                  //       color: Colors.black54,
+                  //     ),
+                  //     const SizedBox(width: 8),
+                  //     Text(
+                  //       "Membre depuis le ${profileVM.startDate}",
+                  //       style: const TextStyle(
+                  //         fontSize: 14,
+                  //         fontWeight: FontWeight.w500,
+                  //         color: Colors.black87,
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
@@ -151,10 +178,8 @@ class ProfileView extends StatelessWidget {
                             label: "Abonnement",
                             icon: Icons.stars,
                             color: const Color(0xFFD35252),
-                            onTap: () {
-                              // Logic for cancellation or subscription management
-                              debugPrint("Manage subscription or cancel");
-                            },
+                            onTap: () =>
+                                _showCancelDialog(context, authVM, subVM),
                           ),
                       ],
                     ),
@@ -359,6 +384,52 @@ class ProfileView extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelDialog(
+    BuildContext context,
+    AuthViewModel authVM,
+    SubscriptionViewModel subVM,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Gérer l'abonnement"),
+        content: const Text(
+          "Voulez-vous vraiment résilier votre abonnement Premium ?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Retour", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final userId = authVM.userId;
+              if (userId != null) {
+                final success = await subVM.cancelSubscription(
+                  int.parse(userId.toString()),
+                );
+                if (success && context.mounted) {
+                  await authVM.checkSubscriptionStatus();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Abonnement résilié avec succès."),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              "Résilier",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

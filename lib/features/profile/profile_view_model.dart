@@ -11,26 +11,40 @@ class ProfileViewModel extends ChangeNotifier {
   List<dynamic> _collectionBeers = [];
   List<dynamic> _wishlistBeers = [];
   bool _isLoading = false;
+  bool _isDisposed = false; // To prevent memory leak errors
 
   bool get isLoading => _isLoading;
 
+  // USER INFO
   String get username =>
-      _userData?['username'] ?? _userData?['user_name'] ?? "User";
+      _userData?['username'] ?? _userData?['user_name'] ?? "Utilisateur";
   String get email => _userData?['email'] ?? "...";
 
+  // COUNTERS
   int get collectionCount => _collectionBeers.length;
   int get wishlistCount => _wishlistBeers.length;
 
-  // Subscription helpers
-  bool get isStandardAccount => _userData?['subscription_type'] == 'standard';
+  // SUBSCRIPTION LOGIC
+  bool get isStandardAccount =>
+      _userData?['subscription']?['subscription_type'] == 'standard' ||
+      _userData?['subscription'] == null;
+
   String get subscriptionType =>
       _userData?['subscription']?['subscription_type'] ?? "Standard";
 
-  // Mocked dates for now, should ideally come from _userData
-  // TODO: DATA
-  String get startDate => "26/11/2024";
-  String get renewalDate => "26/02/2026";
-  bool get isAutoRenewal => true;
+  // DYNAMIC DATES
+  String get startDate =>
+      _formatDate(_userData?['created_date']) ?? "Date inconnue";
+
+  String get renewalDate {
+    final sub = _userData?['subscription'];
+    final date = sub?['next_billing_date'] ?? sub?['expires_at'];
+    return _formatDate(date) ?? "--/--/----";
+  }
+
+  bool get isAutoRenewal =>
+      _userData?['subscription']?['is_auto_renew'] == true ||
+      _userData?['subscription']?['is_auto_renew'] == 1;
 
   ProfileViewModel(
     this._apiClient, {
@@ -38,40 +52,62 @@ class ProfileViewModel extends ChangeNotifier {
     required this.collectionId,
     required this.wishlistId,
   }) {
-    // Automatically fetch data when ViewModel is created
     refreshData();
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  // REFRESH DATA
   Future<void> refreshData() async {
     if (_isLoading) return;
     _isLoading = true;
-    notifyListeners();
+    _safeNotify();
 
     try {
-      // Fetch Basic Profile Info
+      // 1. Fetch User Profile
       _userData = await _apiClient.getUserProfile(userId);
-      // debugPrint("DEBUG: User Data loaded: $_userData");
 
-      // Fetch Collection (Handling the 404 if empty)
+      // 2. Fetch Collection
       try {
         _collectionBeers = await _apiClient.getUserBeers(userId);
       } catch (e) {
-        // If API returns 404, it means the collection is just empty
-        debugPrint("DEBUG: Collection is empty or unreachable");
+        debugPrint("DEBUG: Collection empty for profile");
         _collectionBeers = [];
       }
 
-      // Fetch Wishlist (Handling the 404 if empty)
+      // 3. Fetch Wishlist
       try {
         _wishlistBeers = await _apiClient.getWishlistBeers(wishlistId);
       } catch (e) {
-        debugPrint("DEBUG: Wishlist is empty or unreachable");
+        debugPrint("DEBUG: Wishlist empty for profile");
         _wishlistBeers = [];
       }
     } catch (e) {
-      debugPrint("DEBUG ERROR: Global fetch failed: $e");
+      debugPrint("DEBUG ERROR: Profile refresh failed: $e");
     } finally {
       _isLoading = false;
+      _safeNotify();
+    }
+  }
+
+  // HELPER: Format date from ISO to DD/MM/YYYY
+  String? _formatDate(String? dateStr) {
+    if (dateStr == null) return null;
+    try {
+      final date = DateTime.parse(dateStr);
+      return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  // SECURITY: Only notify if the view model still exists
+  void _safeNotify() {
+    if (!_isDisposed) {
       notifyListeners();
     }
   }

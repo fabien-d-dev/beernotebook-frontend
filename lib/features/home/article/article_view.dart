@@ -90,127 +90,134 @@ class _ArticleViewState extends State<ArticleView> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            controller: _scrollController,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image Section
-                SizedBox(
-                  width: double.infinity,
-                  height: 250,
-                  child: (image != null && image.isNotEmpty)
-                      ? Image.network(
-                          image,
-                          fit: BoxFit.cover,
+      body: SafeArea(
+        top: false, // L'image peut monter jusqu'à l'AppBar
+        bottom: true, // Protège le bouton source de la barre Samsung
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.only(bottom: 20), // Un peu d'air en bas
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section Image
+                  SizedBox(
+                    width: double.infinity,
+                    height: 250,
+                    child: (image != null && image.isNotEmpty)
+                        ? Image.network(
+                            image,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.asset(
+                                  'assets/images/placeholder.jpg',
+                                  fit: BoxFit.cover,
+                                ),
+                          )
+                        : Image.asset(
+                            'assets/images/placeholder.jpg',
+                            fit: BoxFit.cover,
+                          ),
+                  ),
 
-                          errorBuilder: (context, error, stackTrace) =>
-                              Image.asset(
-                                'assets/images/placeholder.jpg',
-                                fit: BoxFit.cover,
+                  Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _formatDate(widget.article['date']),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+
+                        // Paragraphes
+                        ...paragraphs.map(
+                          (text) => Padding(
+                            padding: const EdgeInsets.only(bottom: 15),
+                            child: Text(
+                              text.trim(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                height: 1.5,
+                                color: Color(0xFF333333),
                               ),
-                        )
-                      : Image.asset(
-                          'assets/images/placeholder.jpg',
-                          fit: BoxFit.cover,
-                        ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _formatDate(widget.article['date']),
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Body paragraphs
-                      ...paragraphs.map(
-                        (text) => Padding(
-                          padding: const EdgeInsets.only(bottom: 15),
-                          child: Text(
-                            text.trim(),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              height: 1.5,
-                              color: Color(0xFF333333),
                             ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                      // Source Button
-                      ElevatedButton.icon(
-                        onPressed: _openSourceLink,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0396A6),
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                        // Bouton Source
+                        ElevatedButton.icon(
+                          onPressed: _openSourceLink,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0396A6),
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 5,
                           ),
-                          elevation: 5,
-                        ),
-                        icon: const Icon(Icons.link, color: Colors.white),
-                        label: Text(
-                          "Source: $source",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
+                          icon: const Icon(Icons.link, color: Colors.white),
+                          label: Text(
+                            "Source: $source",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // Floating Scroll Top Button
-          if (_showScrollTopButton)
-            Positioned(
-              bottom: 90,
-              right: 17,
-              child: GestureDetector(
-                onTap: _scrollToTop,
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0396A6),
-                    borderRadius: BorderRadius.circular(9),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color.fromARGB(135, 0, 0, 0).withValues(),
-                        blurRadius: 3.84,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.arrow_upward,
-                    color: Colors.white,
-                    size: 32,
+            // Bouton Scroll Top
+            if (_showScrollTopButton)
+              Positioned(
+                bottom: 90,
+                right: 17,
+                child: GestureDetector(
+                  onTap: _scrollToTop,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0396A6),
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 3.84,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.arrow_upward,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
