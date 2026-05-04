@@ -11,15 +11,20 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Watching the ViewModels
     final profileVM = context.watch<ProfileViewModel?>();
-    final authVM = context.watch<AuthViewModel>();
     final subVM = context.watch<SubscriptionViewModel>();
+    final authVM = context.watch<AuthViewModel>();
+
+    // Using the central global state
     final isPremium = authVM.isPremium;
 
+    // Early return if profileVM is null
     if (profileVM == null) {
       return const Scaffold(body: SizedBox.shrink());
     }
 
+    // Loading state
     if (profileVM.isLoading || subVM.isLoading) {
       return const Scaffold(
         backgroundColor: Colors.white,
@@ -118,14 +123,17 @@ class ProfileView extends StatelessWidget {
 
                   _buildSectionTitle("Abonnement"),
                   _buildInfoBox([
-                    _buildInfoRow("Type", profileVM.subscriptionType),
+                    _buildInfoRow(
+                      "Type",
+                      authVM.subscriptionType?.toUpperCase() ?? "STANDARD",
+                    ),
                     const Divider(),
                     _buildInfoRow("Date de début", profileVM.startDate),
                   ]),
 
                   _buildSectionTitle("Renouvellement"),
                   _buildInfoBox([
-                    _buildInfoRow("Date", profileVM.renewalDate),
+                    _buildInfoRow("Prochaine date", profileVM.renewalDate),
                     const Divider(),
                     _buildInfoRow(
                       "Automatique",
