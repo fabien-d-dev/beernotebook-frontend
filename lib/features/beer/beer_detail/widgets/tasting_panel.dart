@@ -49,8 +49,12 @@ class _TastingPanelState extends State<TastingPanel> {
     _obsController.text = item?.observations ?? "";
 
     if (item != null) {
-      int getIndex(List<String> list, String? value) =>
-          value != null ? list.indexOf(value) : 0;
+      int getIndex(List<String> list, String? value) {
+        if (value == null) return 0;
+        int index = list.indexOf(value);
+
+        return index != -1 ? index : 0;
+      }
 
       _couleur = getIndex(colors, item.beerColor).toDouble();
       _transparence = getIndex(clarities, item.clarity).toDouble();
@@ -253,11 +257,13 @@ class _TastingPanelState extends State<TastingPanel> {
     List<String> labels,
     String type,
   ) {
+    final safeIndex = value.toInt().clamp(0, labels.length - 1);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "$label ${labels[value.toInt()]}",
+          "$label ${labels[safeIndex]}",
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         ),
         const SizedBox(height: 5),
