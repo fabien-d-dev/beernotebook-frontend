@@ -6,7 +6,6 @@ import '../../../core/config/environment.dart';
 import '../../beer/beer_model.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/utils/beer_data.dart';
 
 class AddBeerViewModel extends ChangeNotifier {
   final ApiClient _apiClient = ApiClient();
@@ -142,6 +141,32 @@ class AddBeerViewModel extends ChangeNotifier {
     }
   }
 
+  void initWithBeer(Beer beer) {
+    _existingBeerId = beer.id;
+    _existingImageUrl = beer.imageUrl;
+    _imageFile = null;
+
+    barcodeController.text = beer.productId ?? '';
+    breweryController.text = beer.brand;
+    nameController.text = beer.genericName ?? '';
+
+    if (beer.quantity != null && beer.quantity!.isNotEmpty) {
+      int? ml = int.tryParse(beer.quantity!);
+      quantityController.text = ml != null ? (ml ~/ 10).toString() : '';
+    } else {
+      quantityController.text = '';
+    }
+
+    abvController.text = beer.abv ?? '';
+    _selectedOrigin = beer.manufacturingPlace;
+    _selectedType = beer.type;
+
+    _isBarcodePreFilled = true;
+    _showExtraFields = false;
+
+    notifyListeners();
+  }
+
   bool _validateFields() {
     final productId = barcodeController.text.trim();
     final brand = breweryController.text.trim();
@@ -250,62 +275,33 @@ class AddBeerViewModel extends ChangeNotifier {
   }
 
   void prefillWithBeer(Beer beer) {
-    if (beer.productId != null && beer.productId!.isNotEmpty) {
-      barcodeController.text = beer.productId!;
-      _isBarcodePreFilled = true;
-    } else {
-      barcodeController.text = '';
-      _isBarcodePreFilled = false;
-    }
+    // 1. Reset state to avoid carrying over data from previous edits
+    _imageFile = null;
+    _existingImageUrl = beer.imageUrl;
+    _existingBeerId = beer.id;
+
+    // 2. Fill controllers
+    barcodeController.text = beer.productId ?? '';
 
     breweryController.text = beer.brand;
     nameController.text = beer.genericName ?? '';
 
+    // Handle quantity conversion (e.g., ml to cl)
     if (beer.quantity != null && beer.quantity!.isNotEmpty) {
-      final double? q = double.tryParse(beer.quantity!);
-      if (q != null) {
-        final double display = q / 10; // Ex: 330 -> 33.0
-        // Remove .0 if it's a round number
-        quantityController.text = display % 1 == 0
-            ? display.toInt().toString()
-            : display.toString();
-      } else {
-        quantityController.text = '';
-      }
+      // Logic to convert and fill quantityController
+      int? ml = int.tryParse(beer.quantity!);
+      quantityController.text = ml != null ? (ml ~/ 10).toString() : '';
     } else {
       quantityController.text = '';
     }
 
-    abvController.text = beer.abv?.toString() ?? '';
+    abvController.text = beer.abv ?? '';
+    _selectedOrigin = beer.manufacturingPlace;
+    _selectedType = beer.type;
 
-    if (beer.manufacturingPlace != null &&
-        beer.manufacturingPlace!.isNotEmpty) {
-      final exists = BeerData.beerManufacturingPlaces.any(
-        (m) => m['value'] == beer.manufacturingPlace,
-      );
-      _selectedOrigin = exists ? beer.manufacturingPlace : null;
-    } else {
-      _selectedOrigin = null;
-    }
-
-    if (beer.type != null && beer.type!.isNotEmpty) {
-      final exists = BeerData.beerTypes.any((m) => m['value'] == beer.type);
-      _selectedType = exists ? beer.type : null;
-    } else {
-      _selectedType = null;
-    }
-
-    hopsController.text = beer.hops ?? '';
-    ingredientsController.text = beer.ingredients ?? '';
-    allergensController.text = beer.allergens ?? '';
-
-    _showExtraFields =
-        (beer.hops?.isNotEmpty ?? false) ||
-        (beer.ingredients?.isNotEmpty ?? false) ||
-        (beer.allergens?.isNotEmpty ?? false);
-
-    _existingImageUrl = beer.imageUrl;
-    _existingBeerId = beer.id;
+    // 3. UI State flags
+    _isBarcodePreFilled = true;
+    _showExtraFields = true;
 
     notifyListeners();
   }
